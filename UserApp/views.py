@@ -15,7 +15,7 @@ def register_view(request):
             return redirect('profile')
     else:
         form = CustomUserCreationForm()
-    return render(request, 'UserAPP/register.html', {'form': form})
+    return render(request, 'register.html', {'form': form})
 
 @login_required
 def profile_view(request):
@@ -26,4 +26,4 @@ def profile_view(request):
             return redirect('profile')
     else:
         form = CustomUserChangeForm(instance=request.user)
-    return render(request, '../templates/UserAPP/template/profile.html', {'form': form})
+    return render(request, 'profile.html', {'form': form})

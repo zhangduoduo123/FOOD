@@ -1,0 +1,23 @@
+{% extends "base.html" %}  <!-- 继承基础模板 -->
+
+{% block title %}登录页面{% endblock %}  <!-- 覆盖标题区块 -->
+
+{% block content %}
+<div class="row">
+    <div class="col-md-6 offset-md-3">
+        <h2>用户登录</h2>
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="btn btn-primary">登录</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+<!-- 可选：扩展额外的 CSS/JS -->
+{% block extra_css %}
+<style>
+    .custom-login { margin-top: 20px; }
+</style>
+{% endblock %}
