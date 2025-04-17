@@ -11,3 +11,5 @@ class CustomUserChangeForm(UserChangeForm):
     class Meta:
         model = CustomUser
         fields = ('username', 'email','lab')
+
+        #xiugai
