@@ -46,7 +46,7 @@ def optimize_dumpling_nutrition(RNI_range: Dict[str, Union[str, float, int]]) ->
     """
     # 获取当前的绝对路径
     import os
-    current_dir = 'D:/program/VsCodeProjects/python/jiaozi/'
+    current_dir = 'D:/program/VsCodeProjects/python/FOOD/mcp_tools/select_best_nutrition/'
     
     # 生成输出路径
     output_file_path = os.path.join(current_dir, f'output_file/{datetime.datetime.now().strftime("%Y%m%d%H%M%S")}/')
