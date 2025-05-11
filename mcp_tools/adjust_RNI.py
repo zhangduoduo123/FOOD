@@ -1,6 +1,13 @@
 from mcp.server.fastmcp import FastMCP
 import pymysql
 from typing import Dict, Any, Optional, List, Tuple
+import logging
+# 配置日志记录器
+logging.basicConfig(
+    level=logging.INFO,  # 设置日志级别为 INFO
+    format="%(asctime)s - %(levelname)s - %(message)s"  # 日志格式
+)
+logger = logging.getLogger(__name__)
 
 mcp = FastMCP("adjust_RNI")
 
@@ -291,4 +298,5 @@ def adjust_RNI(base_params: Dict[str, Any], adjustments: Dict[str, Any]) -> List
             conn.close()
 
 if __name__ == "__main__":
-    mcp.run()
+    logger.info("Start adjust_RNI server through MCP")  # 记录服务启动日志
+    mcp.run(transport="stdio")  
