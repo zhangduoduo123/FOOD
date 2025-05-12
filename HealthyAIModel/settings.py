@@ -37,7 +37,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'widget_tweaks',
     'UserApp',
+
 ]
 
 MIDDLEWARE = [
@@ -50,7 +52,6 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 # settings.py
-AUTH_USER_MODEL = 'UserApp.CustomUser'  # 指定自定义用户模型
 ROOT_URLCONF = 'HealthyAIModel.urls'
 
 TEMPLATES = [
@@ -80,9 +81,13 @@ WSGI_APPLICATION = 'HealthyAIModel.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+        'ENGINE': 'django.db.backends.mysql',  # 默认
+        'NAME': 'health',  # 连接的数据库  #一定要存在的数据库名
+        'HOST': '127.0.0.1',  # mysql的ip地址
+        'PORT': 3306,  # mysql的端口
+        'USER': 'root',  # mysql的用户名
+        'PASSWORD': 'root'  # mysql的密码
+        }
 }
 
 
@@ -120,7 +125,11 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.1/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+# 自定义静态文件目录
+STATICFILES_DIRS = [
+    BASE_DIR / "static",
+]
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
