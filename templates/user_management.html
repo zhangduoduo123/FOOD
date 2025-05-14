@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
+    <!-- 加载静态文件 -->
+    {% load static %}
+    <link rel="stylesheet" href="{% static '../static/css/home.css' %}">
+    <title>系统首页</title>
+    <script>
+                function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const content = document.getElementById('content');
+            if (sidebar.classList.contains('w-64')) {
+                sidebar.classList.remove('w-64');
+                sidebar.classList.add('w-16');
+                content.classList.remove('ml-64');
+                content.classList.add('ml-16');
+            } else {
+                sidebar.classList.remove('w-16');
+                sidebar.classList.add('w-64');
+                content.classList.remove('ml-16');
+                content.classList.add('ml-64');
+            }
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('message-input');
+            const message = input.value;
+            if (message.trim()!== '') {
+                const chatContainer = document.getElementById('chat-container');
+                const userMessageDiv = document.createElement('div');
+                userMessageDiv.classList.add('message', 'user-message');
+                userMessageDiv.textContent = message;
+                chatContainer.appendChild(userMessageDiv);
+
+                try {
+                    const response = await fetch('{% url "get_answer" %}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': getCookie('csrftoken')
+                        },
+                        body: JSON.stringify({ question: message })
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        const answer = data.answer;
+                        const assistantMessageDiv = document.createElement('div');
+                        assistantMessageDiv.classList.add('message', 'assistant-message');
+                        assistantMessageDiv.textContent = answer;
+                        chatContainer.appendChild(assistantMessageDiv);
+                    } else {
+                        console.error('请求失败:', response.status);
+                    }
+                } catch (error) {
+                    console.error('发生错误:', error);
+                }
+
+                input.value = '';
+            }
+        }
+
+        // 为输入框添加回车键事件监听器
+        document.addEventListener('DOMContentLoaded', function () {
+            const input = document.getElementById('message-input');
+            input.addEventListener('keydown', function (event) {
+                if (event.key === 'Enter') {
+                    event.preventDefault(); // 阻止默认的换行行为
+                    sendMessage();
+                }
+            });
+        });
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie!== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        // 选项卡切换逻辑
+        function openTab(tabName) {
+            const tabContents = document.getElementsByClassName('tab-content');
+            for (let i = 0; i < tabContents.length; i++) {
+                tabContents[i].style.display = 'none';
+            }
+
+            const tabLinks = document.getElementsByClassName('tab-link');
+            for (let i = 0; i < tabLinks.length; i++) {
+                tabLinks[i].classList.remove('bg-blue-600', 'text-white');
+                tabLinks[i].classList.add('bg-gray-200', 'text-gray-700');
+            }
+
+            document.getElementById(tabName).style.display = 'block';
+            event.currentTarget.classList.remove('bg-gray-200', 'text-gray-700');
+            event.currentTarget.classList.add('bg-blue-600', 'text-white');
+
+            // 记录当前激活的标签页
+            localStorage.setItem('activeTab', tabName);
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const successMessage = document.getElementById('success-message');
+            if (successMessage) {
+                setTimeout(() => {
+                    successMessage.style.display = 'none';
+                }, 5000);
+            }
+
+        });
+    </script>
+</head>
+
+<body class="bg-gray-100 font-sans">
+<!-- 左侧导航栏 -->
+<div id="sidebar" class="w-64 bg-blue-600 h-screen fixed left-0 top-0 overflow-y-auto text-white"
+     style="overflow-x: hidden;">
+    <button id="toggle-btn" class="p-4 focus:outline-none" onclick="toggleSidebar()">
+        <i class="fa-solid fa-bars"></i>
+    </button>
+    <div class="px-4 py-6">
+        <h1 class="text-2xl font-bold mb-6">系统首页</h1>
+        <ul class="space-y-4">
+            <li>
+                <a href="{% url 'index' %}" class="flex items-center hover:text-gray-300 tooltip">
+                    <i class="fa-solid fa-comments mr-4"></i>
+                    <span class="text-lg">大模型对话</span>
+                    <span class="tooltiptext">大模型对话</span>
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'user_management' %}" class="flex items-center hover:text-gray-300 tooltip">
+                    <i class="fa-solid fa-users mr-4"></i>
+                    <span class="text-lg">用户管理</span>
+                    <span class="tooltiptext">用户管理</span>
+                </a>
+            </li>
+
+        </ul>
+    </div>
+</div>
+<!-- 主内容区域 -->
+<div id="content" class="ml-64 p-8">
+    <!-- 添加标题 -->
+    <h2>中原食品实验室智慧营养问答大模型</h2>
+
+    <!-- 选项卡 -->
+    <div class="mt-4">
+        <div class="flex space-x-2">
+            <button class="tab-link bg-gray-200 text-gray-700 px-4 py-2 rounded-md" onclick="openTab('Tab1')">
+                个人信息管理
+            </button>
+            <button class="tab-link bg-gray-200 text-gray-700 px-4 py-2 rounded-md" onclick="openTab('Tab2')">
+                健康信息管理
+            </button>
+        </div>
+        <div id="Tab1" class="tab-content mt-4 bg-white p-6 rounded-lg shadow-md" style="display: block;">
+            <form method="post">
+                {% csrf_token %}
+                <div class="flex flex-col space-y-4">
+                    <div class="flex items-center space-x-4">
+                        <label for="{{ user_info_form.username.id_for_label }}"
+                               class="w-1/4 text-right">{{ user_info_form.username.label }}</label>
+                        <input type="text" id="{{ user_info_form.username.id_for_label }}"
+                               name="{{ user_info_form.username.name }}"
+                               value="{{ user_info_form.username.value|default:'' }}"
+                               class="border border-gray-300 p-2 rounded-md max-w-xl flex-1">
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <label for="{{ user_info_form.password.id_for_label }}"
+                               class="w-1/4 text-right">{{ user_info_form.password.label }}</label>
+                        <input type="password" id="{{ user_info_form.password.id_for_label }}" name="{{ user_info_form.password.name }}"
+                               value="{{ user_info_form.password.value|default:'' }}"
+                               class="border border-gray-300 p-2 rounded-md max-w-xl flex-1">
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <label for="{{ user_info_form.confirm_password.id_for_label }}"
+                               class="w-1/4 text-right">{{ user_info_form.confirm_password.label }}</label>
+                        <input type="password" id="{{ user_info_form.confirm_password.id_for_label }}"
+                               name="{{ user_info_form.confirm_password.name }}"
+                               value="{{ user_info_form.confirm_password.value|default:'' }}"
+                               class="border border-gray-300 p-2 rounded-md max-w-xl flex-1">
+                    </div>
+                    <input type="hidden" name="Tab_value" value="1">
+                    <div class="flex items-center space-x-4">
+                        <div class="w-1/4"></div>
+                        <button class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 max-w-sm">保存
+                        </button>
+                    </div>
+                </div>
+            </form>
+            {% if success_message %}
+                <div class="flex items-center space-x-4">
+                    <div class="w-1/4"></div>
+                    <div style="color: green;">{{ success_message }}</div>
+                </div>
+            {% endif %}
+
+        </div>
+        <div id="Tab2" class="tab-content mt-4 bg-white p-6 rounded-lg shadow-md" style="display: none;">
+            <form method="post">
+                {% csrf_token %}
+                <div class="flex flex-col space-y-4">
+                    <input type="hidden" name="Tab_value" value="2">
+
+                    <!-- 身高字段 -->
+                    <div class="flex items-center space-x-4">
+                        <label for="{{ user_basic_info_form.height.id_for_label }}"
+                               class="w-1/4 text-right">{{ user_basic_info_form.height.label }}</label>
+                        <!-- 手动添加与 TAB1 一致的样式类 -->
+                        <input
+                                type="number"
+                                id="{{ user_basic_info_form.height.id_for_label }}"
+                                name="{{ user_basic_info_form.height.name }}"
+                                value="{{ user_basic_info_form.height.value|default:'' }}"
+                                class="border border-gray-300 p-2 rounded-md max-w-xl flex-1"> <!-- 关键样式 -->
+
+                    </div>
+
+                    <!-- 年龄字段 -->
+                    <div class="flex items-center space-x-4">
+                        <label for="{{ user_basic_info_form.age.id_for_label }}" class="w-1/4 text-right">{{ user_basic_info_form.age.label }}</label>
+                        <input
+                                type="number"
+                                id="{{ user_basic_info_form.age.id_for_label }}"
+                                name="{{ user_basic_info_form.age.name }}"
+                                value="{{ user_basic_info_form.age.value|default:'' }}"
+                                class="border border-gray-300 p-2 rounded-md max-w-xl flex-1"
+                        >
+                    </div>
+
+                    <!-- 体重字段 -->
+                    <div class="flex items-center space-x-4">
+                        <label for="{{ user_basic_info_form.weight.id_for_label }}"
+                               class="w-1/4 text-right">{{ user_basic_info_form.weight.label }}</label>
+                        <input
+                                type="number"
+                                id="{{ user_basic_info_form.weight.id_for_label }}"
+                                name="{{ user_basic_info_form.weight.name }}"
+                                value="{{ user_basic_info_form.weight.value|default:'' }}"
+                                class="border border-gray-300 p-2 rounded-md max-w-xl flex-1"
+                        >
+                    </div>
+
+                    <!-- 体力活动字段（假设是下拉框，需额外处理样式兼容性） -->
+                    <div class="flex items-center space-x-4">
+                        <label for="{{ user_basic_info_form.physical_activity.id_for_label }}"
+                               class="w-1/4 text-right">{{ user_basic_info_form.physical_activity.label }}</label>
+                        <!-- 下拉框添加相同边框和圆角样式 -->
+                        {{ user_basic_info_form.physical_activity }}  <!-- 若下拉框样式异常，手动渲染： -->
+
+                    </div>
+
+                    <!-- 性别字段（假设是单选框组，需调整布局，此处示例为下拉框样式） -->
+                    <div class="flex items-center space-x-4">
+                        <label for="{{ user_basic_info_form.gender.id_for_label }}"
+                               class="w-1/4 text-right">{{ user_basic_info_form.gender.label }}</label>
+                        {{ user_basic_info_form.gender }}  <!-- 若为单选框，需单独处理布局，建议在表单类中优化 -->
+                    </div>
+
+                    <!-- 保存按钮 -->
+                    <div class="flex items-center space-x-4">
+                        <div class="w-1/4"></div>
+                        <button type="submit"
+                                class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 max-w-sm">
+                            保存
+                        </button>
+                    </div>
+                </div>
+            </form>
+
+            {% if success_message %}
+                <div class="flex items-center space-x-4">
+                    <div class="w-1/4"></div>
+                    <div style="color: green;">{{ success_message }}</div>
+                </div>
+            {% endif %}
+        </div>
+</body>
+
+</html>

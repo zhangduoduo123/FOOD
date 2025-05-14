@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
+    <!-- 加载静态文件 -->
+    {% load static %}
+    <link rel="stylesheet" href="{% static '../static/css/home.css' %}">
+    <title>系统首页</title>
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const content = document.getElementById('content');
+            if (sidebar.classList.contains('w-64')) {
+                sidebar.classList.remove('w-64');
+                sidebar.classList.add('w-16');
+                content.classList.remove('ml-64');
+                content.classList.add('ml-16');
+            } else {
+                sidebar.classList.remove('w-16');
+                sidebar.classList.add('w-64');
+                content.classList.remove('ml-16');
+                content.classList.add('ml-64');
+            }
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('message-input');
+            const message = input.value;
+            if (message.trim()!== '') {
+                const chatContainer = document.getElementById('chat-container');
+                const userMessageDiv = document.createElement('div');
+                userMessageDiv.classList.add('message', 'user-message');
+                userMessageDiv.textContent = message;
+                chatContainer.appendChild(userMessageDiv);
+
+                try {
+                    const response = await fetch('{% url "get_answer" %}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': getCookie('csrftoken')
+                        },
+                        body: JSON.stringify({ question: message })
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        const answer = data.answer;
+                        const assistantMessageDiv = document.createElement('div');
+                        assistantMessageDiv.classList.add('message', 'assistant-message');
+                        assistantMessageDiv.textContent = answer;
+                        chatContainer.appendChild(assistantMessageDiv);
+                    } else {
+                        console.error('请求失败:', response.status);
+                    }
+                } catch (error) {
+                    console.error('发生错误:', error);
+                }
+
+                input.value = '';
+            }
+        }
+
+        // 为输入框添加回车键事件监听器
+        document.addEventListener('DOMContentLoaded', function () {
+            const input = document.getElementById('message-input');
+            input.addEventListener('keydown', function (event) {
+                if (event.key === 'Enter') {
+                    event.preventDefault(); // 阻止默认的换行行为
+                    sendMessage();
+                }
+            });
+        });
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie!== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        function clearChat() {
+            const chatContainer = document.getElementById('chat-container');
+            chatContainer.innerHTML = '';
+        }
+    </script>
+    <style>
+        /* 新对话按钮样式 */
+        button#new-conversation-btn {
+            background-color: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 24px;
+            padding: 8px 16px;
+            font-size: 14px;
+            color: #333;
+            cursor: pointer;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        button#new-conversation-btn:hover {
+            background-color: #f0f0f0;
+            color: #007bff;
+        }
+
+        button#new-conversation-btn i {
+            margin-right: 6px;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100 font-sans">
+    <!-- 左侧导航栏 -->
+    <div id="sidebar" class="w-64 bg-blue-600 h-screen fixed left-0 top-0 overflow-y-auto text-white" style=" overflow-x: hidden;">
+        <button id="toggle-btn" class="p-4 focus:outline-none" onclick="toggleSidebar()">
+            <i class="fa-solid fa-bars"></i>
+        </button>
+        <div class="px-4 py-6">
+            <h1 class="text-2xl font-bold mb-6">系统首页</h1>
+            <ul class="space-y-4">
+                <li>
+                    <a href="{% url 'index' %}" class="flex items-center hover:text-gray-300 tooltip">
+                        <i class="fa-solid fa-comments mr-4"></i>
+                        <span class="text-lg">大模型对话</span>
+                        <span class="tooltiptext">大模型对话</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'user_management' %}" class="flex items-center hover:text-gray-300 tooltip">
+                        <i class="fa-solid fa-users mr-4"></i>
+                        <span class="text-lg">用户管理</span>
+                        <span class="tooltiptext">用户管理</span>
+                    </a>
+                </li>
+
+            </ul>
+        </div>
+    </div>
+    <!-- 主内容区域 -->
+    <div id="content" class="ml-64 p-8">
+        <!-- 添加标题 -->
+        <h2>中原食品实验室智慧营养问答大模型</h2>
+        <!-- 对话页面 -->
+        <div class="bg-white p-6 rounded-lg shadow-md h-full">
+            <button id="new-conversation-btn" class="mb-2" onclick="clearChat()">
+                <i class="fa-solid fa-plus"></i> 新对话
+            </button>
+            <div id="chat-container" class="chat-container">
+                <!-- 这里可以预先添加一些历史消息 -->
+            </div>
+            <div class="flex mt-4">
+                <input type="text" id="message-input" class="flex-1 border border-gray-300 p-2 rounded-md"
+                    placeholder="输入你的消息">
+                <button class="bg-blue-600 text-white px-4 py-2 rounded-md ml-2 hover:bg-blue-700"
+                    onclick="sendMessage()">
+                    <i class="fa-solid fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
