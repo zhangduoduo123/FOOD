@@ -135,7 +135,7 @@ def get_base_RNI(params: Dict[str, Any]) -> Dict[str, Any]:
             port=3306,
             user="root",
             password="root",
-            database="mcp"
+            database="health"
         )
         cursor = conn.cursor()
         
@@ -226,7 +226,7 @@ def adjust_RNI(base_params: Dict[str, Any], adjustments: Dict[str, Any]) -> List
             port=3306,
             user="root",
             password="root",
-            database="mcp"
+            database="health"
         )
         cursor = conn.cursor()
         
