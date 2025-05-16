@@ -7,7 +7,7 @@ MYSQL_CONFIG = {
     'host': 'localhost',
     'user': 'root',
     'password': 'root',
-    'database': 'test'
+    'database': 'health'
 }
 
 def get_mysql_connection():
