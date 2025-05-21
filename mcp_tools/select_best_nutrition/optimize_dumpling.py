@@ -6,6 +6,7 @@ from typing import Dict, Union, List
 import pandas as pd
 from client import optimize_dumpling_nutrition
 import logging
+from pyprojroot import here
 # 配置日志记录器
 logging.basicConfig(
     level=logging.INFO,  # 设置日志级别为 INFO
@@ -27,7 +28,8 @@ def optimize_dumpling(params: Dict[str, Union[str, float]]) -> Dict[str, Union[s
         优化结果，包含营养值、参数信息和元数据
     """
     # 调用优化函数
-    result = optimize_dumpling_nutrition(params)
+    current_dir = str(here()).replace('\\', '/')+'/mcp_tools/select_best_nutrition/'
+    result = optimize_dumpling_nutrition(params, current_dir=current_dir)
     
     # 转换DataFrame为字典
     if isinstance(result["result_data"], pd.DataFrame):

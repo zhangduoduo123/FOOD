@@ -24,7 +24,7 @@ SELECT_NUTRITION = [
     "钠-毫克", "镁-毫克", "铁-毫克", "锌-毫克", "硒-微克", "铜-毫克", "锰-毫克"
 ]
 
-def optimize_dumpling_nutrition(RNI_range: Dict[str, Union[str, float, int]]) -> Dict[str, Union[pd.DataFrame, Dict]]:
+def optimize_dumpling_nutrition(RNI_range: Dict[str, Union[str, float, int]], current_dir: str) -> Dict[str, Union[pd.DataFrame, Dict]]:
     """
     基于给定的RNI范围优化饺子配方并生成分析报告
 
@@ -46,7 +46,7 @@ def optimize_dumpling_nutrition(RNI_range: Dict[str, Union[str, float, int]]) ->
     """
     # 获取当前的绝对路径
     import os
-    current_dir = 'D:/program/VsCodeProjects/python/FOOD/mcp_tools/select_best_nutrition/'
+    # current_dir = 'D:/program/VsCodeProjects/python/FOOD/mcp_tools/select_best_nutrition/'
     
     # 生成输出路径
     output_file_path = os.path.join(current_dir, f'output_file/{datetime.datetime.now().strftime("%Y%m%d%H%M%S")}/')
