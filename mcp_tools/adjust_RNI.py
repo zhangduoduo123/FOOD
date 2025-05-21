@@ -2,6 +2,14 @@ from mcp.server.fastmcp import FastMCP
 import pymysql
 from typing import Dict, Any, Optional, List, Tuple
 import logging
+import os
+import sys
+
+# Add the project root directory to Python path
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.append(project_root)
+
+from utils.mysql_util import get_mysql_connection
 # 配置日志记录器
 logging.basicConfig(
     level=logging.INFO,  # 设置日志级别为 INFO
@@ -130,13 +138,7 @@ def adjust_value_by_weight(value: Any, weight_ratio: float) -> Any:
 def get_base_RNI(params: Dict[str, Any]) -> Dict[str, Any]:
     """获取基础RNI值"""
     try:
-        conn = pymysql.connect(
-            host="127.0.0.1",
-            port=3306,
-            user="root",
-            password="root",
-            database="health"
-        )
+        conn = get_mysql_connection()
         cursor = conn.cursor()
         
         # 获取表的列名
@@ -221,13 +223,7 @@ def adjust_RNI(base_params: Dict[str, Any], adjustments: Dict[str, Any]) -> List
         ]
     """
     try:
-        conn = pymysql.connect(
-            host="127.0.0.1",
-            port=3306,
-            user="root",
-            password="root",
-            database="health"
-        )
+        conn = get_mysql_connection()
         cursor = conn.cursor()
         
         # 获取数据库列名

@@ -1,14 +1,7 @@
 from typing import Union, List, Dict
 import mysql.connector
 from langchain_community.chat_models import ChatOllama
-
-# MySQL配置
-MYSQL_CONFIG = {
-    'host': 'localhost',
-    'user': 'root',
-    'password': 'root',
-    'database': 'health'
-}
+from utils.env_info import MYSQL_CONFIG
 
 def get_mysql_connection():
     """创建并返回MySQL连接"""
@@ -253,3 +246,8 @@ def query_database(question: str) -> str:
         
     except Exception as e:
         return f"查询过程中出错: {str(e)}"
+    
+if __name__ == "__main__":
+    question = "查询所有用户信息"
+    result = query_database(question)
+    print(result)

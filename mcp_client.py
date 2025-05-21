@@ -3,11 +3,12 @@ from langchain_mcp_adapters.client import MultiServerMCPClient
 from langgraph.prebuilt import create_react_agent
 from langchain_deepseek import ChatDeepSeek
 from langchain_ollama import ChatOllama
+from utils.env_info import DEEPSEEK_API_KEY
 
 # 初始化 DeepSeek 大模型客户端
 llm = ChatDeepSeek(
     model="deepseek-chat",  # 指定 DeepSeek 的模型名称
-    api_key="sk-93bc741e0a594976b79f12852f4a63a5"  # 替换为您自己的 DeepSeek API 密钥
+    api_key=DEEPSEEK_API_KEY  # 替换为您自己的 DeepSeek API 密钥
 )
 # llm = ChatOllama(model="qwen2.5:7b", temperature=0.7)
  
