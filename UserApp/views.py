@@ -4,6 +4,8 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.shortcuts import render, redirect
 from django.contrib.auth import login, authenticate, logout
+
+from .auth import check_login
 from .forms import LoginForm, RegisterForm, UserBasicInfoForm, UserInfoForm
 from django.contrib import messages
 from UserApp.models import *
@@ -23,6 +25,8 @@ def user_login(request):
             try:
                 user = UserInfo.objects.get(username=username,password=encrypted_password)
                 request.session['user_id'] = user.uid
+                request.session.set_expiry(3600)  # 设置1小时过期（可选）
+                request.session.save()
                 return render(request, 'home.html')  # 登录成功后重定向到首页
             except UserInfo.DoesNotExist:
                 messages.error(request, "用户名或密码错误")
@@ -45,9 +49,12 @@ def user_register(request):
             # 获取表单中的用户名和密码
             username = form.cleaned_data['username']
             password = form.cleaned_data['password']
+            telephone = form.cleaned_data['telephone']
+
 
             # 对密码进行加密
             encrypted_password = hashlib.sha256(password.encode()).hexdigest()
+            # encrypted_telephone = hashlib.sha256(telephone.encode()).hexdigest()
 
             user = UserInfo.objects.filter(username=username).first()
             if user:
@@ -58,6 +65,7 @@ def user_register(request):
                     UserInfo.objects.create(
                         username=username,
                         password=encrypted_password,
+                        telephone=telephone,
                     )
                     # 注册成功提示
                     success_message = "注册成功，请登录"
@@ -73,12 +81,12 @@ def user_register(request):
 
 
 def user_logout(request):
-    logout(request)
-    messages.success(request, '退出成功！')
-    return redirect('home')
+    request.session.flush()
+    # messages.success(request, '退出成功！')
+    return redirect('login')
 
 
-
+@check_login
 def user_management(request):
     success_message = None
     form_error = None
@@ -86,10 +94,16 @@ def user_management(request):
     user_basic_info_form = UserBasicInfoForm()
     user_info_form = UserInfoForm()
 
+    uid = request.session.get("user_id")
+    user_info = UserInfo.objects.filter(uid=uid).first()
+    user_basic_info = UserBasicInfo.objects.filter(uid=uid).first()
+
+    active_tab = "Tab1"
+
     if request.method == 'POST':
         tab = request.POST.get("Tab_value")
-
         if tab == '2':
+            active_tab = "Tab2"
             form = UserBasicInfoForm(request.POST)
             if form.is_valid():
                 # 处理表单数据
@@ -98,7 +112,9 @@ def user_management(request):
                 weight = form.cleaned_data['weight']
                 physical_activity = form.cleaned_data['physical_activity']
                 gender = form.cleaned_data['gender']
-
+                diabetes = form.cleaned_data['diabetes']
+                ethnicity = form.cleaned_data['ethnicity']
+                vegetarian=form.cleaned_data['vegetarian']
                 uid = request.session.get("user_id")
 
                 try:
@@ -109,25 +125,34 @@ def user_management(request):
                     user_basic_info.weight = weight
                     user_basic_info.physical_activity = physical_activity
                     user_basic_info.gender= gender
+                    user_basic_info.diabetes = diabetes
+                    user_basic_info.ethnicity = ethnicity
+                    user_basic_info.vegetarian = vegetarian
                     user_basic_info.save()
                     success_message = "保存成功！"
                     user_basic_info_form = UserBasicInfoForm()  # 清空表单
                 except UserBasicInfo.DoesNotExist:
                     form_error = "用户健康信息不存在"
+            else:
+                print(form.errors)
+                form_error = form.errors
         elif tab == '1':
             form = UserInfoForm(request.POST)
             if form.is_valid():
                 # 处理表单数据
                 username = form.cleaned_data['username']
+                telephone = form.cleaned_data['telephone']
                 password = form.cleaned_data['password']
                 confirm_password = form.cleaned_data['confirm_password']
+
 
                 if password == confirm_password:
                     uid = request.session.get("user_id")
                     try:
                         user = UserInfo.objects.get(uid=uid)
                         user.username=username
-                        user.password = hashlib.sha256(form.cleaned_data['password'].encode()).hexdigest()
+                        user.password = hashlib.sha256(password.encode()).hexdigest()
+                        user.telephone = telephone
                         user.save()
                         success_message = "保存成功！"
                         user_info_form = UserInfoForm()
@@ -137,12 +162,16 @@ def user_management(request):
                     success_message = "两次密码不一致"
             else:
                 form_error = form.errors
-        else:
-            return render(request, 'user_management.html',
-                          {'user_basic_info_form': user_basic_info_form, 'user_info_form': user_info_form,
-                           'success_message': success_message, 'form_error': form_error})
+        return render(request, 'user_management.html',
+                      {'user_basic_info_form': user_basic_info_form, 'user_info_form': user_info_form,
+                       'success_message': success_message, 'form_error': form_error, 'active_tab':active_tab,'user_info': user_info,'user_basic_info':user_basic_info})
+    else:
+        return render(request, 'user_management.html',
+                      {'user_basic_info_form': user_basic_info_form, 'user_info_form': user_info_form,
+                       'success_message': success_message, 'form_error': form_error, 'user_info': user_info,'user_basic_info':user_basic_info})
 
-    return render(request, 'user_management.html', {'user_basic_info_form': user_basic_info_form,'user_info_form':user_info_form, 'success_message': success_message,'form_error':form_error})
+
+
 
 
 def clear_success_message(request):
