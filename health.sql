@@ -11,7 +11,7 @@
  Target Server Version : 50717 (5.7.17-log)
  File Encoding         : 65001
 
- Date: 12/05/2025 21:41:44
+ Date: 26/05/2025 18:50:12
 */
 
 SET NAMES utf8mb4;
@@ -265,7 +265,15 @@ CREATE TABLE `django_session`  (
 -- ----------------------------
 -- Records of django_session
 -- ----------------------------
-INSERT INTO `django_session` VALUES ('sct6raf4ia9na9847jakxv33t3xtty5h', 'eyJ1c2VyX2lkIjoxMDAwMH0:1uDw4P:I2uyO1VymeUbHrZYbU18DNc6CKG6ZnFWzdk55iWjjqI', '2025-05-25 02:05:37.364489');
+INSERT INTO `django_session` VALUES ('61angygbx2jc7e6q15ecthogchbx0h74', 'eyJ1c2VyX2lkIjoxMDAwMCwiX3Nlc3Npb25fZXhwaXJ5IjozNjAwfQ:1uH1qC:bVhjDLxeAhtNpHMCaUnags2jsGA20egbwvkd5qHvdDU', '2025-05-19 15:51:44.956621');
+INSERT INTO `django_session` VALUES ('6s1ue94fwa94ixt9fa9ujnorkee20u90', 'eyJ1c2VyX2lkIjoxMDAwMCwiX3Nlc3Npb25fZXhwaXJ5IjozNjAwfQ:1uI7gR:NLfIRntaTnZh6dC5CZPcGNXXbZ6NCQWbZk8HeU7Bpfo', '2025-05-22 16:18:11.706417');
+INSERT INTO `django_session` VALUES ('b3gxqp40s6z7p8efiygzvisqjcmplywt', 'eyJ1c2VyX2lkIjoxMDAwMCwiX3Nlc3Npb25fZXhwaXJ5IjozNjAwfQ:1uHl75:Yv-El6q-MfbyyREC2pvRl2xdkX7y1DWHneGrQ8lN_is', '2025-05-21 16:12:11.882751');
+INSERT INTO `django_session` VALUES ('fg9gx2pzgfb2tvrbojlwf8kikiutepnt', 'eyJ1c2VyX2lkIjoxMDAwMCwiX3Nlc3Npb25fZXhwaXJ5IjozNjAwfQ:1uH228:MTDxI9jJcW-Me0-bVukg6J2QlcERPay1LNqvx_Es3wU', '2025-05-19 16:04:04.831893');
+INSERT INTO `django_session` VALUES ('iykpzph4o2ohn2ogfyigi8pq6rhbduvt', 'eyJ1c2VyX2lkIjoxMDAwMCwiX3Nlc3Npb25fZXhwaXJ5IjozNjAwfQ:1uH1mH:oBWa5CeoQS6pdYzOVpd9nk5yUvQmChfUYOogvI7LMQA', '2025-05-19 15:47:41.273045');
+INSERT INTO `django_session` VALUES ('kx6haiqdvo50bl43akcm507gas6d7ydq', 'eyJ1c2VyX2lkIjoxMDAwMCwiX3Nlc3Npb25fZXhwaXJ5IjozNjAwfQ:1uJ6HO:ELeaj4VFnv0KP_xvJWoMNZNUAl-nVmM39k-en0z7aV8', '2025-05-25 09:00:22.661908');
+INSERT INTO `django_session` VALUES ('swiw9vou4aufqcdcveajlvpum9nrk4ww', 'eyJ1c2VyX2lkIjoxMDAwMCwiX3Nlc3Npb25fZXhwaXJ5IjozNjAwfQ:1uJ5Hb:YTJgwrZ_hmwF8w0uc9QSrUn6IcFSEP0Ywhkpg4INqiM', '2025-05-25 07:56:31.588211');
+INSERT INTO `django_session` VALUES ('uag2yogomjb8ruvq1bh7ehv725ouf7mp', 'eyJ1c2VyX2lkIjoxMDAwMCwiX3Nlc3Npb25fZXhwaXJ5IjozNjAwfQ:1uIQah:xuNBMNvwyIM1U8egdeNcKsA5vfT3BGWwjYtGiP6ua2k', '2025-05-23 12:29:31.747589');
+INSERT INTO `django_session` VALUES ('w5u3j42totx0gd5hh9emr4uuzlo24y25', 'eyJ1c2VyX2lkIjoxMDAwMCwiX3Nlc3Npb25fZXhwaXJ5IjozNjAwfQ:1uI6iv:MAX-Pj43TwQFmdYEIdca-N9aFRfK6si-YSzmUuGRiyc', '2025-05-22 15:16:41.788351');
 INSERT INTO `django_session` VALUES ('y4rcluifppd6pifddvlsl7417x5t2q8h', 'eyJ1c2VyX2lkIjoxMDAwMH0:1u7wuQ:lsN6LjLxY3tRCLl6p_O1WKhgS0ketLG3nc0eSy-ObRk', '2025-05-08 13:46:34.418779');
 
 -- ----------------------------
@@ -279,6 +287,9 @@ CREATE TABLE `user_basic_info`  (
   `height` double NULL DEFAULT NULL,
   `age` int(11) NULL DEFAULT NULL,
   `physical_activity` int(11) NULL DEFAULT NULL,
+  `diabetes` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL,
+  `Ethnicity` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL,
+  `Vegetarian` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL,
   PRIMARY KEY (`uid`) USING BTREE,
   CONSTRAINT `user_basic_info_ibfk_1` FOREIGN KEY (`uid`) REFERENCES `user_info` (`uid`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE = InnoDB CHARACTER SET = utf8 COLLATE = utf8_general_ci ROW_FORMAT = Dynamic;
@@ -286,7 +297,7 @@ CREATE TABLE `user_basic_info`  (
 -- ----------------------------
 -- Records of user_basic_info
 -- ----------------------------
-INSERT INTO `user_basic_info` VALUES (10000, 'M', 213, 231, 123, 1);
+INSERT INTO `user_basic_info` VALUES (10000, 'M', 64, 175, 24, 1, 'Y', '汉族', 'Y');
 
 -- ----------------------------
 -- Table structure for user_info
@@ -296,14 +307,14 @@ CREATE TABLE `user_info`  (
   `uid` int(11) NOT NULL AUTO_INCREMENT,
   `username` varchar(20) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL,
   `password` varchar(100) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL,
+  `telephone` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL,
   PRIMARY KEY (`uid`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 10010 CHARACTER SET = utf8 COLLATE = utf8_general_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 10001 CHARACTER SET = utf8 COLLATE = utf8_general_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of user_info
 -- ----------------------------
-INSERT INTO `user_info` VALUES (10000, '任乐乐', '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92');
-INSERT INTO `user_info` VALUES (10009, 'Renlele', '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92');
+INSERT INTO `user_info` VALUES (10000, '任乐乐', '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92', '15128229836');
 
 -- ----------------------------
 -- Table structure for rni_chinese
