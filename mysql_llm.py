@@ -248,6 +248,6 @@ def query_database(question: str) -> str:
         return f"查询过程中出错: {str(e)}"
     
 if __name__ == "__main__":
-    question = "查询所有用户信息"
+    question = "查询rni_chinese表有多少记录"
     result = query_database(question)
     print(result)
