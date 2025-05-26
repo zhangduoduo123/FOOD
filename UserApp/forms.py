@@ -26,6 +26,12 @@ class RegisterForm(forms.Form):
         widget=forms.TextInput(attrs={'class': 'form-control'}),
         error_messages={'required': '请输入用户名'}
     )
+    telephone = forms.CharField(
+        label="手机号",
+        max_length=50,
+        widget=forms.TextInput(attrs={'class': 'form-control'}),
+        error_messages={'required': '请输入手机号'}
+    )
     password = forms.CharField(
         label="密码",
         widget=forms.PasswordInput(attrs={'class': 'form-control'}),
@@ -56,17 +62,19 @@ class UserBasicInfoForm(forms.Form):
         help_text='请输入你的身高，单位为厘米',
         error_messages={
             'required': '身高是必填项',
-            'min_value': '身高不能为负数'
+            'min_value': '身高不能为负数',
         },
         widget=forms.NumberInput(attrs={'class': 'form-control'})
     )
     age = forms.IntegerField(
         label='年龄',
         min_value=0,
+        max_value=100,
         help_text='请输入你的年龄',
         error_messages={
             'required': '年龄是必填项',
-            'min_value': '年龄不能为负数'
+            'min_value': '年龄不能为负数',
+            'max_value': '年龄不能大于100'
         },
         widget=forms.NumberInput(attrs={'class': 'form-control'})
     )
@@ -99,6 +107,34 @@ class UserBasicInfoForm(forms.Form):
         widget=forms.Select(attrs={'class': 'form-control'})
     )
 
+    YesOrNo_CHOICES = [
+        ('Y', '是'),
+        ('N', '否'),
+    ]
+    diabetes = forms.ChoiceField(
+        label='患有糖尿病',
+        choices=YesOrNo_CHOICES,
+        error_messages={
+            'required': '是否患有糖尿病'
+        },
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
+
+    vegetarian = forms.ChoiceField(
+        label='素食主义者',
+        choices=YesOrNo_CHOICES,
+        error_messages={
+            'required': '请选择是否为素食主义者'
+        },
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
+
+    ethnicity = forms.CharField(
+        label="民族",
+        max_length=50,
+        widget=forms.TextInput(attrs={'class': 'form-control'}),
+        error_messages={'required': '请输入民族'}
+    )
     # 性别选项
     GENDER_CHOICES = [
         ('M', '男'),
@@ -114,6 +150,12 @@ class UserBasicInfoForm(forms.Form):
         widget=forms.Select(attrs={'class': 'form-control'})
     )
 
+    def clean_age(self):
+        age = self.cleaned_data.get("age")
+        if age<0 or age>100:
+            raise forms.ValidationError("年龄需介于0-100之间")
+        return age
+
 
 class UserInfoForm(forms.Form):
     username = forms.CharField(
@@ -121,6 +163,12 @@ class UserInfoForm(forms.Form):
         max_length=50,
         widget=forms.TextInput(attrs={'class': 'form-control'}),
         error_messages={'required': '请输入用户名'}
+    )
+    telephone = forms.CharField(
+        label="手机号",
+        max_length=50,
+        widget=forms.TextInput(attrs={'class': 'form-control'}),
+        error_messages={'required': '请输入手机号'}
     )
     password = forms.CharField(
         label="密码",

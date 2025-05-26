@@ -141,7 +141,15 @@ body {
     outline: none;
     border-color: #1e40af;
 }
+/* 按钮悬停动画 */
+button[type="submit"] {
+    transition: transform 0.2s ease;
+}
 
+button[type="submit"]:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
 button[onclick="sendMessage()"] {
     background-color: #1e40af;
     color: white;
@@ -163,4 +171,27 @@ button[onclick="sendMessage()"]:hover {
 
 button[onclick="sendMessage()"] i {
     font-size: 1.5rem;
+}
+
+#success-message {
+    position: fixed;
+    top: 20px; /* 调整顶部距离 */
+    right: 20px; /* 调整右侧距离 */
+    padding: 12px 16px; /* 内边距 */
+    background-color: #ecfdf5; /* 浅绿色背景（替代 Tailwind 的 bg-green-100） */
+    border: 1px solid #a7f3d0; /* 浅绿边框 */
+    color: #065f46; /* 深绿文字 */
+    border-radius: 8px; /* 圆角 */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* 阴影 */
+    opacity: 1; /* 初始不透明 */
+    display: block; /* 初始显示 */
+    z-index: 9999; /* 确保层级最高，覆盖其他元素 */
+    transition: opacity 0.3s ease; /* 渐变消失效果 */
+}
+
+#success-message svg {
+    width: 16px; /* SVG 图标大小 */
+    height: 16px;
+    margin-right: 8px; /* 图标与文字间距 */
+    fill: #065f46; /* 图标颜色与文字一致 */
 }
