@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
+    {% load static %}
+    <link rel="stylesheet" href="{% static '../static/css/home.css' %}">
+    <title>中原食品实验室智慧营养问答大模型</title>
+    <style>
+        /* 全局提示样式 */
+        .global-alert {
+            position: fixed;
+            top: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 1rem 2rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            display: none;
+            align-items: center;
+            z-index: 1000;
+            min-width: 300px;
+            justify-content: center;
+        }
+        .global-success-alert {
+            background: #ecfdf5;
+            border: 1px solid #6ee7b7;
+            color: #047857;
+        }
+        .global-error-alert {
+            background: #fef2f2;
+            border: 1px solid #fca5a5;
+            color: #b91c1c;
+        }
+        .global-alert i {
+            font-size: 1.25rem;
+            margin-right: 0.75rem;
+        }
+
+        /* 表单错误提示样式 */
+        .error-message {
+            color: #b91c1c;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+            margin-left: 25%; /* 与标签对齐 */
+            display: none;
+        }
+        .input-error {
+            border-color: #fca5a5 !important;
+            box-shadow: 0 0 0 2px rgba(248, 113, 113, 0.1) !important;
+        }
+    </style>
+    <script>
+        // 侧边栏折叠逻辑
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const content = document.getElementById('content');
+            sidebar.classList.toggle('w-64');
+            sidebar.classList.toggle('w-16');
+            content.classList.toggle('ml-64');
+            content.classList.toggle('ml-16');
+        }
+
+        // 获取 CSRF Token（用于 AJAX 请求）
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.startsWith(`${name}=`)) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        // 显示全局提示（支持成功/错误类型）
+        function showGlobalAlert(message, type = 'success') {
+            const alert = document.getElementById('global-alert');
+            const icon = document.getElementById('global-alert-icon');
+            const messageSpan = document.getElementById('global-alert-message');
+
+            // 清除原有样式并设置新类型
+            alert.classList.remove('global-success-alert', 'global-error-alert');
+            alert.classList.add(`global-${type}-alert`);
+
+            // 设置图标和消息
+            icon.className = `fa-solid fa-${type === 'success' ? 'check-circle' : 'xmark-circle'}`;
+            messageSpan.textContent = message;
+
+            // 显示并自动关闭
+            alert.style.display = 'flex';
+            setTimeout(() => {
+                alert.style.display = 'none';
+            }, 4000); // 4秒后自动关闭
+        }
+
+        // 显示字段级错误提示
+        function showFieldError(fieldId, message) {
+            const field = document.getElementById(fieldId);
+            const errorElement = document.getElementById(`${fieldId}-error`);
+
+            if (field && errorElement) {
+                field.classList.add('input-error');
+                errorElement.textContent = message;
+                errorElement.style.display = 'block';
+            }
+        }
+
+        // 清除所有字段错误提示
+        function clearFieldErrors() {
+            const errorElements = document.getElementsByClassName('error-message');
+            const inputs = document.querySelectorAll('input, select');
+
+            // 清除输入框样式
+            inputs.forEach(input => input.classList.remove('input-error'));
+
+            // 清除错误消息
+            for (const error of errorElements) {
+                error.textContent = '';
+                error.style.display = 'none';
+            }
+        }
+
+        // 选项卡切换逻辑（关闭提示并清除错误）
+        function openTab(tabName) {
+            clearFieldErrors(); // 切换选项卡时清除所有字段错误
+            document.getElementById('global-alert').style.display = 'none'; // 关闭全局提示
+
+            // 隐藏所有选项卡内容
+            const tabContents = document.getElementsByClassName('tab-content');
+            for (const tab of tabContents) {
+                tab.style.display = 'none';
+            }
+
+            // 切换选项卡按钮样式
+            const tabLinks = document.getElementsByClassName('tab-link');
+            for (const link of tabLinks) {
+                link.classList.remove('bg-blue-600', 'text-white');
+                link.classList.add('bg-gray-200', 'text-gray-700');
+            }
+
+            // 显示当前选项卡内容并激活按钮样式
+            const activeTab = document.getElementById(tabName);
+            const activeTabLink = document.querySelector(`[onclick="openTab('${tabName}')"]`);
+            if (activeTab && activeTabLink) {
+                activeTab.style.display = 'block';
+                activeTabLink.classList.remove('bg-gray-200', 'text-gray-700');
+                activeTabLink.classList.add('bg-blue-600', 'text-white');
+            }
+
+            // 记录当前选项卡状态
+            localStorage.setItem('active_tab', tabName);
+        }
+
+        // 页面加载初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            // 恢复上次激活的选项卡（默认显示 Tab1）
+            const savedTab = localStorage.getItem('active_tab') || 'Tab1';
+            openTab(savedTab);
+
+            // 处理服务器端传递的消息
+            const successMessage = document.body.dataset.successMessage;
+            const errorMessage = document.body.dataset.errorMessage;
+
+            if (successMessage) {
+                showGlobalAlert(successMessage, 'success');
+            }
+            if (errorMessage) {
+                showGlobalAlert(errorMessage, 'error');
+            }
+
+            // 显示表单字段错误（假设后端通过data属性传递错误数据）
+            const fieldErrors = JSON.parse(document.body.dataset.fieldErrors || '{}');
+            Object.entries(fieldErrors).forEach(([fieldId, message]) => {
+                showFieldError(fieldId, message);
+            });
+        });
+    </script>
+</head>
+
+<body class="bg-gray-100 font-sans"
+      data-success-message="{% if success_message %}{{ success_message }}{% endif %}"
+      data-error-message="{% if form_error %}{{ form_error|join:' ' }}{% endif %}">
+    <!-- 全局提示（支持成功/错误） -->
+    <div id="global-alert" class="global-alert">
+        <i id="global-alert-icon" class="fa-solid"></i>
+        <span id="global-alert-message"></span>
+    </div>
+
+    <!-- 左侧导航栏 -->
+    <div id="sidebar"
+         class="w-64 bg-blue-600 h-screen fixed left-0 top-0 overflow-y-auto text-white transition-width duration-300"
+         style="overflow-x: hidden;">
+        <button id="toggle-btn" class="p-4 focus:outline-none" onclick="toggleSidebar()">
+            <i class="fa-solid fa-bars text-white text-xl"></i>
+        </button>
+        <div class="px-4 py-6">
+            <h1 class="text-2xl font-bold mb-6">系统首页</h1>
+            <ul class="space-y-4">
+                <li>
+                    <a href="{% url 'index' %}" class="flex items-center hover:text-gray-300 tooltip">
+                        <i class="fa-solid fa-comments mr-4"></i>
+                        <span class="text-lg">大模型对话</span>
+                        <span class="tooltiptext">大模型对话</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'user_management' %}" class="flex items-center hover:text-gray-300 tooltip">
+                        <i class="fa-solid fa-users mr-4"></i>
+                        <span class="text-lg">用户管理</span>
+                        <span class="tooltiptext">用户管理</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="http://127.0.0.1:8000/" class="flex items-center hover:text-gray-300 tooltip">
+                        <i class="fa-solid fa-notes-medical mr-4"></i>
+                        <span class="text-lg">科研大模型</span>
+                        <span class="tooltiptext">科研大模型</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- 主内容区域 -->
+    <div id="content" class="ml-64 p-8 transition-all duration-300">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-semibold">中原食品实验室智慧营养问答大模型</h2>
+
+            <form action="{% url 'logout' %}" method="post">
+                {% csrf_token %}
+                <button type="submit" class="bg-blue-200 hover:bg-blue-300 text-gray-800 px-4 py-2 rounded-md flex items-center transition-colors duration-200 ease-in-out">
+                    <i class="fa-solid fa-right-from-bracket mr-2"></i>
+                    退出登录
+                </button>
+            </form>
+        </div>
+
+        <!-- 选项卡容器 -->
+        <div class="mt-4">
+            <!-- 选项卡按钮 -->
+            <div class="flex space-x-2 mb-4">
+                <button class="tab-link bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300 transition-colors duration-200"
+                        onclick="openTab('Tab1')">
+                    个人信息管理
+                </button>
+                <button class="tab-link bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300 transition-colors duration-200"
+                        onclick="openTab('Tab2')">
+                    健康信息管理
+                </button>
+            </div>
+
+            <!-- 个人信息管理选项卡（Tab1） -->
+            <div id="Tab1" class="tab-content bg-white p-6 rounded-lg shadow-md">
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="Tab_value" value="1">
+                    <div class="flex flex-col space-y-4">
+                        <!-- 用户名 -->
+                        <div class="flex items-center space-x-4">
+                            <label for="{{ user_info_form.username.id_for_label }}"
+                                   class="w-1/4 text-right text-gray-600 font-medium">
+                                {{ user_info_form.username.label }}
+                            </label>
+                            <input type="text" id="{{ user_info_form.username.id_for_label }}"
+                                   name="{{ user_info_form.username.name }}"
+                                   value="{{ user_info_form.username.value|default:user_info.username|default:'' }}"
+                                   class="border border-gray-300 p-2 rounded-md max-w-xl flex-1 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <span id="{{ user_info_form.username.id_for_label }}-error" class="error-message"></span>
+
+                        <!-- 电话 -->
+                        <div class="flex items-center space-x-4">
+                            <label for="{{ user_info_form.telephone.id_for_label }}"
+                                   class="w-1/4 text-right text-gray-600 font-medium">
+                                {{ user_info_form.telephone.label }}
+                            </label>
+                            <input type="text" id="{{ user_info_form.telephone.id_for_label }}"
+                                   name="{{ user_info_form.telephone.name }}"
+                                   value="{{ user_info_form.telephone.value|default:user_info.telephone|default:'' }}"
+                                   class="border border-gray-300 p-2 rounded-md max-w-xl flex-1 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <span id="{{ user_info_form.telephone.id_for_label }}-error" class="error-message"></span>
+
+                        <!-- 密码 -->
+                        <div class="flex items-center space-x-4">
+                            <label for="{{ user_info_form.password.id_for_label }}"
+                                   class="w-1/4 text-right text-gray-600 font-medium">
+                                {{ user_info_form.password.label }}
+                            </label>
+                            <input type="password" id="{{ user_info_form.password.id_for_label }}"
+                                   name="{{ user_info_form.password.name }}"
+                                   value="{{ user_info_form.password.value|default:'' }}"
+                                   class="border border-gray-300 p-2 rounded-md max-w-xl flex-1 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <span id="{{ user_info_form.password.id_for_label }}-error" class="error-message"></span>
+
+                        <!-- 确认密码 -->
+                        <div class="flex items-center space-x-4">
+                            <label for="{{ user_info_form.confirm_password.id_for_label }}"
+                                   class="w-1/4 text-right text-gray-600 font-medium">
+                                {{ user_info_form.confirm_password.label }}
+                            </label>
+                            <input type="password" id="{{ user_info_form.confirm_password.id_for_label }}"
+                                   name="{{ user_info_form.confirm_password.name }}"
+                                   value="{{ user_info_form.confirm_password.value|default:'' }}"
+                                   class="border border-gray-300 p-2 rounded-md max-w-xl flex-1 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <span id="{{ user_info_form.confirm_password.id_for_label }}-error" class="error-message"></span>
+
+                        <!-- 保存按钮 -->
+                        <div class="flex items-center space-x-4 mt-4">
+                            <div class="w-1/4"></div>
+                            <button type="submit"
+                                    class="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition-colors duration-200">
+                                保存
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- 健康信息管理选项卡（Tab2） -->
+            <div id="Tab2" class="tab-content bg-white p-6 rounded-lg shadow-md" style="display: none;">
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="Tab_value" value="2">
+                    <div class="flex flex-col space-y-4">
+                        <!-- 身高 -->
+                        <div class="flex items-center space-x-4">
+                            <label for="{{ user_basic_info_form.height.id_for_label }}"
+                                   class="w-1/4 text-right text-gray-600 font-medium">
+                                {{ user_basic_info_form.height.label }}
+                            </label>
+                            <input type="number" id="{{ user_basic_info_form.height.id_for_label }}"
+                                   name="{{ user_basic_info_form.height.name }}"
+                                   value="{{ user_basic_info_form.height.value|default:user_basic_info.height|default:'' }}"
+                                   class="border border-gray-300 p-2 rounded-md max-w-xl flex-1 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <span id="{{ user_basic_info_form.height.id_for_label }}-error" class="error-message"></span>
+
+                        <!-- 年龄 -->
+                        <div class="flex items-center space-x-4">
+                            <label for="{{ user_basic_info_form.age.id_for_label }}"
+                                   class="w-1/4 text-right text-gray-600 font-medium">
+                                {{ user_basic_info_form.age.label }}
+                            </label>
+                            <input type="number" id="{{ user_basic_info_form.age.id_for_label }}"
+                                   name="{{ user_basic_info_form.age.name }}"
+                                   value="{{ user_basic_info_form.age.value|default:user_basic_info.age|default:'' }}"
+                                   class="border border-gray-300 p-2 rounded-md max-w-xl flex-1 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <span id="{{ user_basic_info_form.age.id_for_label }}-error" class="error-message"></span>
+
+                        <!-- 民族 -->
+                        <div class="flex items-center space-x-4">
+                            <label for="{{ user_basic_info_form.ethnicity.id_for_label }}"
+                                   class="w-1/4 text-right text-gray-600 font-medium">
+                                {{ user_basic_info_form.ethnicity.label }}
+                            </label>
+                            <input type="text" id="{{ user_basic_info_form.ethnicity.id_for_label }}"
+                                   name="{{ user_basic_info_form.ethnicity.name }}"
+                                   value="{{ user_basic_info_form.ethnicity.value|default:user_basic_info.ethnicity|default:'' }}"
+                                   class="border border-gray-300 p-2 rounded-md max-w-xl flex-1 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <span id="{{ user_basic_info_form.ethnicity.id_for_label }}-error" class="error-message"></span>
+
+                        <!-- 素食习惯 -->
+                        <div class="flex items-center space-x-4">
+                            <label for="{{ user_basic_info_form.vegetarian.id_for_label }}"
+                                   class="w-1/4 text-right text-gray-600 font-medium">
+                                {{ user_basic_info_form.vegetarian.label }}
+                            </label>
+                            {{ user_basic_info_form.vegetarian }}
+                        </div>
+                        <span id="{{ user_basic_info_form.vegetarian.id_for_label }}-error" class="error-message"></span>
+
+                        <!-- 体重 -->
+                        <div class="flex items-center space-x-4">
+                            <label for="{{ user_basic_info_form.weight.id_for_label }}"
+                                   class="w-1/4 text-right text-gray-600 font-medium">
+                                {{ user_basic_info_form.weight.label }}
+                            </label>
+                            <input type="number" id="{{ user_basic_info_form.weight.id_for_label }}"
+                                   name="{{ user_basic_info_form.weight.name }}"
+                                   value="{{ user_basic_info_form.weight.value|default:user_basic_info.weight|default:'' }}"
+                                   class="border border-gray-300 p-2 rounded-md max-w-xl flex-1 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <span id="{{ user_basic_info_form.weight.id_for_label }}-error" class="error-message"></span>
+
+                        <!-- 体力活动 -->
+                        <div class="flex items-center space-x-4">
+                            <label for="{{ user_basic_info_form.physical_activity.id_for_label }}"
+                                   class="w-1/4 text-right text-gray-600 font-medium">
+                                {{ user_basic_info_form.physical_activity.label }}
+                            </label>
+                            {{ user_basic_info_form.physical_activity }}
+                        </div>
+                        <span id="{{ user_basic_info_form.physical_activity.id_for_label }}-error" class="error-message"></span>
+
+                        <!-- 性别 -->
+                        <div class="flex items-center space-x-4">
+                            <label for="{{ user_basic_info_form.gender.id_for_label }}"
+                                   class="w-1/4 text-right text-gray-600 font-medium">
+                                {{ user_basic_info_form.gender.label }}
+                            </label>
+                            {{ user_basic_info_form.gender }}
+                        </div>
+                        <span id="{{ user_basic_info_form.gender.id_for_label }}-error" class="error-message"></span>
+
+                        <!-- 糖尿病史 -->
+                        <div class="flex items-center space-x-4">
+                            <label for="{{ user_basic_info_form.diabetes.id_for_label }}"
+                                   class="w-1/4 text-right text-gray-600 font-medium">
+                                {{ user_basic_info_form.diabetes.label }}
+                            </label>
+                            {{ user_basic_info_form.diabetes }}
+                        </div>
+                        <span id="{{ user_basic_info_form.diabetes.id_for_label }}-error" class="error-message"></span>
+
+                        <!-- 保存按钮 -->
+                        <div class="flex items-center space-x-4 mt-4">
+                            <div class="w-1/4"></div>
+                            <button type="submit"
+                                    class="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition-colors duration-200">
+                                保存
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

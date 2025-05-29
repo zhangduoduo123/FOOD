@@ -1,0 +1,197 @@
+body {
+    margin: 0;
+    overflow: hidden; /* 禁止页面整体滚动 */
+    font-family: sans-serif;
+}
+
+#sidebar {
+    transition: width 0.3s ease;
+    width: 256px; /* w-64 对应的宽度 */
+    background-color: #3b82f6;
+    height: 100vh;
+    position: fixed;
+    left: 0;
+    top: 0;
+    overflow-y: auto;
+    color: white;
+}
+
+#content {
+    transition: margin-left 0.3s ease;
+    margin-left: 256px; /* 与侧边栏宽度一致 */
+    padding: 16px; /* p-4 对应的内边距 */
+    height: 100vh;
+    box-sizing: border-box;
+}
+
+#sidebar.w-16 {
+    width: 64px;
+}
+
+#content.ml-16 {
+    margin-left: 64px;
+}
+
+#sidebar.w-16 span {
+    display: none;
+}
+
+#sidebar.w-16 h1 {
+    display: none;
+}
+
+.message {
+    padding: 10px;
+    margin: 10px;
+    border-radius: 8px;
+    max-width: 70%;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    line-height: 1.5;
+}
+
+.user-message {
+    background-color: #e5f6ff;
+    align-self: flex-end;
+    border: 1px solid #b3d9ff;
+}
+
+.assistant-message {
+    background-color: #f1f1f1;
+    align-self: flex-start;
+    border: 1px solid #d4d4d4;
+}
+
+.chat-container {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 250px); /* 调整高度以适应布局 */
+    overflow-y: auto;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+}
+
+.tooltip {
+    position: relative;
+    display: inline-block;
+}
+
+.tooltip .tooltiptext {
+    visibility: hidden;
+    width: 120px;
+    background-color: #555;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px 0;
+    position: absolute;
+    z-index: 1;
+    left: 125%;
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.tooltip .tooltiptext::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    right: 100%;
+    margin-top: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: transparent #555 transparent transparent;
+}
+
+.tooltip:hover .tooltiptext {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* 放大左侧图标 */
+#sidebar ul li a i {
+    font-size: 1.5rem;
+}
+
+/* 重新设计标题样式 */
+#content h2 {
+    font-size: 2.25rem;
+    font-weight: 800;
+    color: #1e40af;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+    margin-bottom: 1.5rem;
+    letter-spacing: 0.05em;
+}
+
+/* 输入框和发送按钮样式 */
+#message-input {
+    border: 1px solid #ccc;
+    padding: 15px;
+    font-size: 16px;
+    border-radius: 8px;
+    transition: border-color 0.3s ease;
+    height: 60px;
+    resize: none;
+    flex: 1;
+}
+
+#message-input:focus {
+    outline: none;
+    border-color: #1e40af;
+}
+/* 按钮悬停动画 */
+button[type="submit"] {
+    transition: transform 0.2s ease;
+}
+
+button[type="submit"]:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+button[onclick="sendMessage()"] {
+    background-color: #1e40af;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    height: 60px;
+    margin-left: 8px; /* ml-2 对应的外边距 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+button[onclick="sendMessage()"]:hover {
+    background-color: #15307a;
+}
+
+button[onclick="sendMessage()"] i {
+    font-size: 1.5rem;
+}
+
+#success-message {
+    position: fixed;
+    top: 20px; /* 调整顶部距离 */
+    right: 20px; /* 调整右侧距离 */
+    padding: 12px 16px; /* 内边距 */
+    background-color: #ecfdf5; /* 浅绿色背景（替代 Tailwind 的 bg-green-100） */
+    border: 1px solid #a7f3d0; /* 浅绿边框 */
+    color: #065f46; /* 深绿文字 */
+    border-radius: 8px; /* 圆角 */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* 阴影 */
+    opacity: 1; /* 初始不透明 */
+    display: block; /* 初始显示 */
+    z-index: 9999; /* 确保层级最高，覆盖其他元素 */
+    transition: opacity 0.3s ease; /* 渐变消失效果 */
+}
+
+#success-message svg {
+    width: 16px; /* SVG 图标大小 */
+    height: 16px;
+    margin-right: 8px; /* 图标与文字间距 */
+    fill: #065f46; /* 图标颜色与文字一致 */
+}

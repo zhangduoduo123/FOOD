@@ -1,0 +1,43 @@
+/* 继承登录页面的基础样式，可根据需要调整 */
+.login-container {
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.input-field {
+    padding: 0.8rem;
+    border: 2px solid #e0e0e0;
+    border-radius: 6px;
+    font-size: 1rem;
+    transition: border-color 0.3s ease;
+}
+
+.input-field:focus {
+    outline: none;
+    border-color: #646cff;
+}
+
+.login-button {
+    padding: 0.8rem;
+    background-color: #646cff;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.login-button:hover {
+    background-color: #4b52d9;
+}
+
+/* 响应式调整 */
+@media (max-width: 640px) {
+    .login-container {
+        width: 90%;
+        max-width: 400px;
+    }
+}
