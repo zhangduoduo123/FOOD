@@ -69,6 +69,20 @@ class MCPClient:
                 "args": ["./mcp_tools/select_best_nutrition/optimize_dumpling.py"],
                 "transport": "stdio",
             },
+        
+            "rag": {
+                "command": "python",
+                "args": ["./mcp_tools/rag.py"],
+                "transport": "stdio",
+            },
+        
+            "neo4j_llm": {
+                "command": "python",
+                "args": ["./mcp_tools/neo4j_llm.py"],
+                "transport": "stdio",
+            },
+            
+            
         }
 
     async def __aenter__(self):
