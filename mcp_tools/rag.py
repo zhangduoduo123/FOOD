@@ -216,6 +216,10 @@ class RAGSystem:
                 embeddings,
                 persist_directory=self.config.get("vector_db_dir")
             )
+            # 打印ChromaDB中的文档内容
+            logger.info("ChromaDB contents:")
+            for i, doc in enumerate(texts):
+                logger.info(f"Document {i}: {doc.page_content}")
 
             # 初始化生成模型
             llm = ChatOllama(
