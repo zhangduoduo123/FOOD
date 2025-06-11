@@ -54,19 +54,9 @@ class MCPClient:
         self.client = None
         self.agent = None
         self._tools_config = {
-            "math": {
+            "get_meal_recommend": {
                 "command": "python",
-                "args": ["./mcp_tools/math_tool.py"],
-                "transport": "stdio",
-            },
-            "adjust_RNI": {
-                "command": "python",
-                "args": ["./mcp_tools/adjust_RNI.py"],
-                "transport": "stdio",
-            },
-            "optimize_dumpling": {
-                "command": "python",
-                "args": ["./mcp_tools/select_best_nutrition/optimize_dumpling.py"],
+                "args": ["./mcp_tools/get_meal_recommend.py"],
                 "transport": "stdio",
             },
         

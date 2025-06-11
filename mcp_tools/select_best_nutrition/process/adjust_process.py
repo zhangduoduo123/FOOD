@@ -1,8 +1,8 @@
 import pandas as pd
 
-from process.nutrition_process import generate_food_list, FOOD_INFO_LIST, DIVIDE_BY_WEIGHT, SCALE
-from process.topsis_process import compute_nutrition_best_value
-from utils.util import SEPARATOR_DIFF_KIND, SEPARATOR_SAME_KIND, SEPARATOR_FORBIDDEN_FOOD, MEAT, VEGETABLE
+from .nutrition_process import generate_food_list, FOOD_INFO_LIST, DIVIDE_BY_WEIGHT, SCALE
+from .topsis_process import compute_nutrition_best_value
+from ..utils.util import SEPARATOR_DIFF_KIND, SEPARATOR_SAME_KIND, SEPARATOR_FORBIDDEN_FOOD, MEAT, VEGETABLE
 
 ADJUST_PERCENT = 0.1
 

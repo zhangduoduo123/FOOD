@@ -1,8 +1,8 @@
 import pandas as pd
 import numpy as np
 
-from topsis.ahpWeight import ahp_weight
-from topsis.entropyWeight import entropy_weight
+from .ahpWeight import ahp_weight
+from .entropyWeight import entropy_weight
 
 
 def topsis(data, weight=None, weight_method='entropy_weight'):

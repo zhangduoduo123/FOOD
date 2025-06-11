@@ -1,4 +1,4 @@
- from typing import Dict, Optional, List
+from typing import Dict, Optional, List
 from neo4j import GraphDatabase
 from langchain_community.chat_models import ChatOllama
 import traceback

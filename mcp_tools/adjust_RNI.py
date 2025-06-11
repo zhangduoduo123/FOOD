@@ -24,7 +24,7 @@ SPECIAL_CONDITIONS = ["孕早期", "孕中期", "哺乳期"]
 # 不需要按体重调整的列
 EXCLUDE_COLUMNS = ['人群', '年龄小值', '年龄大值', '性别', '体重-kg', '活动水平']
 
-PERCENTAGE_OF_EACH_MEAL = {"早饭": 0.3, "午饭": 0.4, "晚饭": 0.3}
+PERCENTAGE_OF_EACH_MEAL = {"早饭": 0.3, "午饭": 0.45, "晚饭": 0.25}
 
 def get_nutrient_columns(cursor) -> List[str]:
     """获取数据库中的营养素列名"""
@@ -68,7 +68,7 @@ def validate_params(params: Dict[str, Any], param_type: str = "rni", columns: Li
     
     if param_type == "rni":
         required_fields = {
-            'sex': '性别',
+            'gender': '性别',
             'age': '年龄',
             'physical_activity': '活动水平',
             'weight': '体重'
@@ -92,7 +92,7 @@ def validate_params(params: Dict[str, Any], param_type: str = "rni", columns: Li
             return "体重必须大于0"
         
         # 验证性别
-        if params['sex'] not in ['男', '女']:
+        if params['gender'] not in ['男', '女']:
             return "性别必须是'男'或'女'"
         
         # 验证活动水平
@@ -150,14 +150,11 @@ def get_base_RNI(params: Dict[str, Any]) -> Dict[str, Any]:
             return {"error": error}
         
         # 构建查询
-        sex = params['sex']
+        gender = params['gender']
         age = params['age']
         physical_activity = params['physical_activity']
-        category = params['category']
-        if category in SPECIAL_CONDITIONS:
-            cursor.execute(f"SELECT * FROM rni_chinese where 人群 = '{category}'")
-        else:
-            cursor.execute(f"SELECT * FROM rni_chinese where 性别 = '{sex}' and 年龄小值 <= {age} and 年龄大值 > {age} and 活动水平 = '{physical_activity}'")
+        
+        cursor.execute(f"SELECT * FROM rni_chinese where 性别 = '{gender}' and 年龄小值 <= {age} and 年龄大值 > {age} and 活动水平 = '{physical_activity}'")
         
         result = cursor.fetchone()
         
@@ -195,31 +192,39 @@ def get_base_RNI(params: Dict[str, Any]) -> Dict[str, Any]:
             conn.close()
 
 @mcp.tool()
-def adjust_RNI(base_params: Dict[str, Any], adjustments: Dict[str, Any]) -> List[Dict[str, Any]]:
+def adjust_RNI(base_params: Dict[str, Any], adjustments: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
     """
     根据调整参数计算调整后的RNI值，并按三餐分配
     
     参数:
         base_params (Dict[str, Any]): 基础RNI查询参数，包含:
-            - category (str): 人群类别
-            - sex (str): 性别
+            - gender (str): 性别
             - age (int/float): 年龄
             - physical_activity (str): 活动水平
             - weight (float): 体重(kg)
-        adjustments (Dict[str, Any]): RNI调整参数，键为营养素名称，值为调整系数
+        adjustments (Optional[Dict[str, Any]]): RNI调整参数，键为营养素名称，值为调整系数。
+            如果为None或空字典，则使用基础RNI值不进行调整。
             例如: {"蛋白质": 1.2, "维生素C": 1.5}
     
     返回:
         List[Dict[str, Any]]: 包含三个字典的列表，分别代表早餐、午餐、晚餐的营养需求
     
     示例:
-        >>> base_params = {"category": "成人", "sex": "男", "age": 30, "physical_activity": "中", "weight": 70}
+        >>> base_params = {"gender": "男", "age": 30, "physical_activity": "中", "weight": 70}
+        >>> # 使用调整参数
         >>> adjustments = {"蛋白质": 1.2, "维生素C": 1.5}
         >>> adjust_RNI(base_params, adjustments)
         [
             {"meal": "早饭", "蛋白质-克": "25.2", "维生素C-毫克": "45-47.25", ...},
             {"meal": "午饭", "蛋白质-克": "33.6", "维生素C-毫克": "60-63", ...},
             {"meal": "晚饭", "蛋白质-克": "25.2", "维生素C-毫克": "45-47.25", ...}
+        ]
+        >>> # 不使用调整参数，直接使用基础RNI值
+        >>> adjust_RNI(base_params)
+        [
+            {"meal": "早饭", "蛋白质-克": "21.0", "维生素C-毫克": "30-31.5", ...},
+            {"meal": "午饣", "蛋白质-克": "28.8", "维生素C-毫克": "42-44.1", ...},
+            {"meal": "晚饭", "蛋白质-克": "21.0", "维生素C-毫克": "30-31.5", ...}
         ]
     """
     try:
@@ -229,10 +234,15 @@ def adjust_RNI(base_params: Dict[str, Any], adjustments: Dict[str, Any]) -> List
         # 获取数据库列名
         columns = get_nutrient_columns(cursor)
         
-        # 验证调整参数
-        error = validate_params(adjustments, "adjustment", columns)
-        if error:
-            return {"error": error}
+        # 如果没有提供调整参数，则设置为空字典
+        if adjustments is None:
+            adjustments = {}
+        
+        # 验证调整参数（只有当adjustments不为空时才进行验证）
+        if adjustments:
+            error = validate_params(adjustments, "adjustment", columns)
+            if error:
+                return [{"error": error}]
         
         # 获取基础RNI值
         base_rni = get_base_RNI(base_params)

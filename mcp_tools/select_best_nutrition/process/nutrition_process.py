@@ -1,7 +1,7 @@
 import pandas as pd
 from decimal import Decimal
 
-from utils.util import find_non_numeric_loc, SEPARATOR_SAME_KIND, SEPARATOR_DIFF_KIND, SEPARATOR_FORBIDDEN_FOOD
+from ..utils.util import find_non_numeric_loc, SEPARATOR_SAME_KIND, SEPARATOR_DIFF_KIND, SEPARATOR_FORBIDDEN_FOOD
 
 # 食物成分表中的食物重量单位是100g，也就是每一百克食物的成分
 DIVIDE_BY_WEIGHT = 100

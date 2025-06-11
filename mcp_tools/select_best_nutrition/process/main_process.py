@@ -1,9 +1,9 @@
-from process.RNI_process import get_RNI_range
-from process.adjust_process import adjust_nutrition_list
-from process.nutrition_process import get_nutrition_file_data, compute_nutrition_by_food_weight, compute_nutrition_list, \
+from .RNI_process import get_RNI_range
+from .adjust_process import adjust_nutrition_list
+from .nutrition_process import get_nutrition_file_data, compute_nutrition_by_food_weight, compute_nutrition_list, \
     compute_combine_nutrition_list
-from process.topsis_process import compute_nutrition_best_value
-from utils.util import mkdir, FLOUR, MEAT, VEGETABLE
+from .topsis_process import compute_nutrition_best_value
+from ..utils.util import mkdir, FLOUR, MEAT, VEGETABLE
 from decimal import Decimal
 
 # 调整营养值的循环次数

@@ -1,5 +1,5 @@
 # 极小型指标：期望指标值越小越好（如患病率、死亡率等）
-from topsis.topsis import topsis
+from ..topsis.topsis import topsis
 
 FILTER_MIN_NUM = 20
 FILTER_STEP = 0.01

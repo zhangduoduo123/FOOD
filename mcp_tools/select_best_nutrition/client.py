@@ -12,7 +12,7 @@ import datetime
 import warnings
 import pandas as pd
 from typing import Dict, Union, List
-from process.main_process import main_process
+from .process.main_process import main_process
 
 # 禁用警告信息
 warnings.filterwarnings('ignore')
