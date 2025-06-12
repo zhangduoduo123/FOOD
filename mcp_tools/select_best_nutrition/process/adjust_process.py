@@ -109,17 +109,25 @@ def compute_stuffing_adjust_nutrition(meat_nutrition_adjust_list, vegetable_nutr
     return stuffing_adjust_nutrition
 
 
-def adjust_stuffing_nutrition(food_name_str, nutrition_best_value, RNI_range, nutrition_file_data):
+def adjust_stuffing_nutrition(food_name_str, nutrition_best_value, RNI_range, nutrition_file_data, EXCLUDED_FOODS=None):
     flour_name_str = food_name_str.split(SEPARATOR_DIFF_KIND)[0]
-
-    meat_nutrition_list, meat_base_info = generate_food_list(nutrition_file_data, MEAT)
+    MEAT_TEMP = MEAT.copy()
+    if EXCLUDED_FOODS is not None:
+        for food in EXCLUDED_FOODS:
+            if food in MEAT_TEMP:
+                MEAT_TEMP.remove(food)
+    meat_nutrition_list, meat_base_info = generate_food_list(nutrition_file_data, MEAT_TEMP)
     meat_name_str = food_name_str.split(SEPARATOR_DIFF_KIND)[1]
     meat_nutrition_adjust_list, meat_new_name, meat_adjust_weight = adjust_single_food_nutrition(meat_name_str,
                                                                                                  meat_nutrition_list,
                                                                                                  meat_base_info,
                                                                                                  nutrition_best_value)
-
-    vegetable_nutrition_list, vegetable_base_info = generate_food_list(nutrition_file_data, VEGETABLE)
+    VEGETABLE_TEMP = VEGETABLE.copy()
+    if EXCLUDED_FOODS is not None:
+        for food in EXCLUDED_FOODS:
+            if food in VEGETABLE_TEMP:
+                VEGETABLE_TEMP.remove(food)
+    vegetable_nutrition_list, vegetable_base_info = generate_food_list(nutrition_file_data, VEGETABLE_TEMP)
     vegetable_name_str = food_name_str.split(SEPARATOR_DIFF_KIND)[2]
     vegetable_nutrition_adjust_list, vegetable_new_name, vegetable_adjust_weight = adjust_single_food_nutrition(
         vegetable_name_str, vegetable_nutrition_list,
@@ -132,13 +140,13 @@ def adjust_stuffing_nutrition(food_name_str, nutrition_best_value, RNI_range, nu
 
 
 def adjust_nutrition_list(nutrition_best_value_list, RNI_range, nutrition_file_data, output_file_path, weight,
-                          nutrition_filter=None, best_value_num=1, min_score=0.9, iter_num=1):
+                          nutrition_filter=None, best_value_num=1, min_score=0.9, iter_num=1, EXCLUDED_FOODS=None):
     adjust_result = nutrition_best_value_list.copy()
     for i in range(nutrition_best_value_list.shape[0]):
         nutrition_best_value = nutrition_best_value_list.iloc[i,].copy()
         food_name_str = nutrition_best_value_list.index[i]
         stuffing_adjust_nutrition = adjust_stuffing_nutrition(food_name_str, nutrition_best_value, RNI_range,
-                                                              nutrition_file_data)
+                                                              nutrition_file_data, EXCLUDED_FOODS)
         adjust_result = pd.concat([adjust_result, stuffing_adjust_nutrition])
     classification = ["综合_调整" + str(iter_num)]
     output_file_name = output_file_path + "{}_营养成分.csv".format(str(classification))

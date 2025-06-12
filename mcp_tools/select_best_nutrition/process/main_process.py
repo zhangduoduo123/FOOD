@@ -9,7 +9,8 @@ from decimal import Decimal
 # 调整营养值的循环次数
 ADJUST_ITER_NUM = 0
 
-def main_process(RNI_range, num_of_dumpling, meat_percent, output_file_path, input_file_path, dumpling_skin_percent, select_nutrition):
+def main_process(RNI_range, num_of_dumpling, meat_percent, 
+                 output_file_path, input_file_path, dumpling_skin_percent, select_nutrition, EXCLUDED_FOODS=None):
     """
     饺子营养优化的主处理函数
     
@@ -87,7 +88,11 @@ def main_process(RNI_range, num_of_dumpling, meat_percent, output_file_path, inp
 
     # 5、计算肉馅搭配
     # 定义肉馅包含哪些类别
-    classifications = MEAT
+    classifications = MEAT.copy()
+    if EXCLUDED_FOODS is not None:
+        for food in EXCLUDED_FOODS:
+            if food in classifications:
+                classifications.remove(food)
     # 肉馅重量
     weight_of_meat = meat_and_vegetable_weight * meat_percent
     # 肉馅种类个数
@@ -100,7 +105,11 @@ def main_process(RNI_range, num_of_dumpling, meat_percent, output_file_path, inp
 
     # 6、计算蔬菜搭配
     # 定义蔬菜包含哪些类别
-    classifications = VEGETABLE
+    classifications = VEGETABLE.copy()
+    if EXCLUDED_FOODS is not None:
+        for food in EXCLUDED_FOODS:
+            if food in classifications:
+                classifications.remove(food)
     # 定义蔬菜占比
     vegetable_percent = 1 - meat_percent
     # 蔬菜重量
@@ -122,7 +131,7 @@ def main_process(RNI_range, num_of_dumpling, meat_percent, output_file_path, inp
                                                              weight, nutrition_filter, 30, 0.9)
     for i in range(ADJUST_ITER_NUM):
         nutrition_best_value_list = adjust_nutrition_list(nutrition_best_value_list, RNI_range, nutrition_file_data2,
-                                                          output_file_path, weight, nutrition_filter, 30, 0.95, i + 1)
+                                                          output_file_path, weight, nutrition_filter, 30, 0.95, i + 1, EXCLUDED_FOODS)
     return nutrition_best_value_list
     # 从当前所需剩余营养中减去总体搭配的最优营养值
     # for nutrition in SELECT_NUTRITION:

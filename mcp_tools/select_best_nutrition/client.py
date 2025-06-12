@@ -23,8 +23,7 @@ SELECT_NUTRITION = [
     "维生素B2-毫克", "维生素C-毫克", "维生素E-毫克", "钙-毫克", "磷-毫克", "钾-毫克",
     "钠-毫克", "镁-毫克", "铁-毫克", "锌-毫克", "硒-微克", "铜-毫克", "锰-毫克"
 ]
-
-def optimize_dumpling_nutrition(RNI_range: Dict[str, Union[str, float, int]], current_dir: str) -> Dict[str, Union[pd.DataFrame, Dict]]:
+def optimize_dumpling_nutrition(RNI_range: Dict[str, Union[str, float, int]], current_dir: str, EXCLUDED_FOODS: List[str] = None) -> Dict[str, Union[pd.DataFrame, Dict]]:
     """
     基于给定的RNI范围优化饺子配方并生成分析报告
 
@@ -37,6 +36,8 @@ def optimize_dumpling_nutrition(RNI_range: Dict[str, Union[str, float, int]], cu
                 "蛋白质-克": 43.2,
                 ...
             }
+        current_dir (str): 当前工作目录
+        EXCLUDED_FOODS (List[str], optional): 需要排除的食物列表. Defaults to None.
 
     Returns:
         Dict[str, Union[pd.DataFrame, Dict]]: 包含以下键的字典：
@@ -46,7 +47,6 @@ def optimize_dumpling_nutrition(RNI_range: Dict[str, Union[str, float, int]], cu
     """
     # 获取当前的绝对路径
     import os
-    # current_dir = 'D:/program/VsCodeProjects/python/FOOD/mcp_tools/select_best_nutrition/'
     
     # 生成输出路径
     output_file_path = os.path.join(current_dir, f'output_file/{datetime.datetime.now().strftime("%Y%m%d%H%M%S")}/')
@@ -67,7 +67,8 @@ def optimize_dumpling_nutrition(RNI_range: Dict[str, Union[str, float, int]], cu
         output_file_path=output_file_path,
         input_file_path=input_file_path,
         dumpling_skin_percent=dumpling_skin_percent,
-        select_nutrition=SELECT_NUTRITION
+        select_nutrition=SELECT_NUTRITION,
+        EXCLUDED_FOODS=EXCLUDED_FOODS
     )
     
     # 转换为DataFrame
@@ -79,19 +80,22 @@ def optimize_dumpling_nutrition(RNI_range: Dict[str, Union[str, float, int]], cu
     final_result.to_csv(result_file_path)
     
     # 构造返回结果
+    food_recommend = final_result.index[0]
+    nutrition_value = final_result.iloc[0].to_dict()
     return {
         "status": "success",
-        "result_data": final_result,
-        "parameters": {
-            "num_of_dumpling": num_of_dumpling,
-            "dumpling_skin_percent": dumpling_skin_percent,
-            "meat_percent": meat_percent
-        },
-        "metadata": {
-            "calculation_time": datetime.datetime.now().isoformat(),
-            "result_file_path": result_file_path,
-            "selected_nutrition": SELECT_NUTRITION
-        }
+        "food_recommend": food_recommend,
+        "nutrition_value": nutrition_value,
+        # "parameters": {
+        #     "num_of_dumpling": num_of_dumpling,
+        #     "dumpling_skin_percent": dumpling_skin_percent,
+        #     "meat_percent": meat_percent
+        # },
+        # "metadata": {
+        #     "calculation_time": datetime.datetime.now().isoformat(),
+        #     "result_file_path": result_file_path,
+        #     "selected_nutrition": SELECT_NUTRITION
+        # }
     }
 
 if __name__ == "__main__":
