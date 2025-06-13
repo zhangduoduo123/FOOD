@@ -1,6 +1,8 @@
 import hashlib
+import re
 
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import ValidationError
 from django.http import JsonResponse
 from django.shortcuts import render, redirect
 from django.contrib.auth import login, authenticate, logout
@@ -42,6 +44,12 @@ from django.contrib import messages
 from .models import UserInfo
 from .forms import RegisterForm
 
+def validate_telephone(value):
+    pattern = r'^1[3-9]\d{9}$'  # 中国手机号格式：1开头，第二位3-9，共11位
+    if not re.match(pattern, value):
+        return '手机号格式不正确'
+    else:
+        return True
 def user_register(request):
     success_message = ''
     if request.method == 'POST':
@@ -55,12 +63,15 @@ def user_register(request):
 
             # 对密码进行加密
             encrypted_password = hashlib.sha256(password.encode()).hexdigest()
-            # encrypted_telephone = hashlib.sha256(telephone.encode()).hexdigest()
 
             user = UserInfo.objects.filter(username=username).first()
             if user:
                 success_message ="注册失败，当前系统已存在该名称用户"
             else:
+                # 验证手机号格式
+                result = validate_telephone(telephone)
+                if result is not True:
+                    messages.error(request,result)
                 try:
                     # 创建新用户
                     UserInfo.objects.create(
@@ -68,12 +79,25 @@ def user_register(request):
                         password=encrypted_password,
                         telephone=telephone,
                     )
+                    user = UserInfo.objects.filter(username=username,password=encrypted_password).first()
+                    UserBasicInfo.objects.create(
+                        uid=user,
+                        gender='F',
+                        weight=0,
+                        height=0,
+                        age=0,
+                        physical_activity=1,
+                        diabetes='N',
+                        ethnicity='汉族',
+                        vegetarian='N'
+                    )
                     # 注册成功提示
                     success_message = "注册成功，请登录"
                     # 将成功消息存储在会话中，以便重定向后仍能访问
                     request.session['success_message'] = success_message
                 except Exception as e:
                     # 处理创建用户时可能出现的异常，例如用户名重复等
+                    print(str(e))
                     messages.error(request, f"注册失败: {str(e)}")
     else:
         form = RegisterForm()
@@ -98,6 +122,7 @@ def user_management(request):
     uid = request.session.get("user_id")
     user_info = UserInfo.objects.filter(uid=uid).first()
     user_basic_info = UserBasicInfo.objects.filter(uid=uid).first()
+    print(user_basic_info.physical_activity)
 
     active_tab = "Tab1"
 
@@ -131,11 +156,20 @@ def user_management(request):
                     user_basic_info.vegetarian = vegetarian
                     user_basic_info.save()
                     success_message = "保存成功！"
-                    user_basic_info_form = UserBasicInfoForm()  # 清空表单
+                    user_basic_info = UserBasicInfo.objects.filter(uid=uid).first()
+                    user_basic_info_form = UserBasicInfoForm(initial={
+                        'height':user_basic_info.height,
+                        'age':user_basic_info.age,
+                        'weight':user_basic_info.weight,
+                        'physical_activity':user_basic_info.physical_activity,
+                        'gender':user_basic_info.gender,
+                        'diabetes':user_basic_info.diabetes,
+                        'ethnicity':user_basic_info.ethnicity,
+                        'vegetarian':user_basic_info.vegetarian
+                    })
                 except UserBasicInfo.DoesNotExist:
                     form_error = "用户健康信息不存在"
             else:
-                print(form.errors)
                 form_error = form.errors
         elif tab == '1':
             form = UserInfoForm(request.POST)
@@ -147,7 +181,7 @@ def user_management(request):
                 confirm_password = form.cleaned_data['confirm_password']
 
 
-                if password == confirm_password:
+                if password == confirm_password and validate_telephone(telephone) is True:
                     uid = request.session.get("user_id")
                     try:
                         user = UserInfo.objects.get(uid=uid)
@@ -155,18 +189,30 @@ def user_management(request):
                         user.password = hashlib.sha256(password.encode()).hexdigest()
                         user.telephone = telephone
                         user.save()
+                        user_info = UserInfo.objects.filter(uid=uid).first()
                         success_message = "保存成功！"
                         user_info_form = UserInfoForm()
                     except UserInfo.DoesNotExist:
                         form_error = "用户不存在"
                 else:
-                    success_message = "两次密码不一致"
+                    form_error = "修改失败，请检查手机号或密码"
             else:
                 form_error = form.errors
         return render(request, 'user_management.html',
                       {'user_basic_info_form': user_basic_info_form, 'user_info_form': user_info_form,
                        'success_message': success_message, 'form_error': form_error, 'active_tab':active_tab,'user_info': user_info,'user_basic_info':user_basic_info})
     else:
+        user_basic_info = UserBasicInfo.objects.filter(uid=uid).first()
+        user_basic_info_form = UserBasicInfoForm(initial={
+            'height': user_basic_info.height,
+            'age': user_basic_info.age,
+            'weight': user_basic_info.weight,
+            'physical_activity': user_basic_info.physical_activity,
+            'gender': user_basic_info.gender,
+            'diabetes': user_basic_info.diabetes,
+            'ethnicity': user_basic_info.ethnicity,
+            'vegetarian': user_basic_info.vegetarian
+        })
         return render(request, 'user_management.html',
                       {'user_basic_info_form': user_basic_info_form, 'user_info_form': user_info_form,
                        'success_message': success_message, 'form_error': form_error, 'user_info': user_info,'user_basic_info':user_basic_info})

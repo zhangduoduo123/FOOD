@@ -91,11 +91,11 @@ class UserBasicInfoForm(forms.Form):
 
     # 身体活动水平选项
     PHYSICAL_ACTIVITY_CHOICES = [
-        ('1', '极轻'),
-        ('2', '轻'),
-        ('3', '中'),
-        ('4', '重'),
-        ('5', '极重'),
+        ('极轻', '极轻'),
+        ('轻', '轻'),
+        ('中', '中'),
+        ('重', '重'),
+        ('极重', '极重'),
     ]
     physical_activity = forms.ChoiceField(
         label='身体活动水平',
@@ -108,8 +108,8 @@ class UserBasicInfoForm(forms.Form):
     )
 
     YesOrNo_CHOICES = [
-        ('Y', '是'),
-        ('N', '否'),
+        ('是', '是'),
+        ('否', '否'),
     ]
     diabetes = forms.ChoiceField(
         label='患有糖尿病',
@@ -137,8 +137,8 @@ class UserBasicInfoForm(forms.Form):
     )
     # 性别选项
     GENDER_CHOICES = [
-        ('M', '男'),
-        ('F', '女'),
+        ('男', '男'),
+        ('女', '女'),
     ]
     gender = forms.ChoiceField(
         label='性别',
