@@ -63,7 +63,7 @@ def get_meal_recommend(username: str, adjustments: Dict[str, Any] = None) -> dic
     # 根据用户信息设置排除的食物
     if user_info.get('Ethnicity') == '回族':
         EXCLUDED_FOODS.append('猪肉')
-    if user_info.get('Vegetarian') == 'Y':
+    if user_info.get('Vegetarian') == '是':
         EXCLUDED_FOODS.extend(['猪肉', '鸡肉', '牛肉', '羊肉'])
     
     result = optimize_dumpling_nutrition(current_meal_recommend, current_dir=current_dir, EXCLUDED_FOODS=EXCLUDED_FOODS)
