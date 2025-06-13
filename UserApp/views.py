@@ -10,6 +10,7 @@ from .forms import LoginForm, RegisterForm, UserBasicInfoForm, UserInfoForm
 from django.contrib import messages
 from UserApp.models import *
 import logging
+@check_login
 def index(request):
     return render(request, 'home.html')
 
