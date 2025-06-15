@@ -31,6 +31,28 @@ def get_meal_recommend(username: str, adjustments: Dict[str, Any] = None) -> dic
         包含推荐餐食信息的字典，包括营养优化结果
     """
     user_info = get_user_info(username)
+    # 计算BMI值
+    weight = float(user_info.get('weight', 0))
+    print(weight)
+    height = float(user_info.get('height', 0))
+    print(height)
+    
+    if weight > 0 and height > 0:
+        # 将身高从厘米转换为米
+        height_m = height / 100
+        bmi = weight / (height_m * height_m)
+        
+        # 如果BMI超过24，调整能量、脂肪和碳水化合物的摄入
+        if bmi > 24:
+            if adjustments is None:
+                adjustments = {}
+            adjust_value = 0.95
+            # 对能量、脂肪、碳水化合物进行调整
+            for nutrient in ['能量', '脂肪', '碳水化合物']:
+                if nutrient in adjustments:
+                    adjustments[nutrient] = round(adjustments[nutrient] * adjust_value, 2)
+                else:
+                    adjustments[nutrient] = adjust_value
     RNI = adjust_RNI(user_info, adjustments)
     from datetime import datetime
     
@@ -67,6 +89,8 @@ def get_meal_recommend(username: str, adjustments: Dict[str, Any] = None) -> dic
         EXCLUDED_FOODS.extend(['猪肉', '鸡肉', '牛肉', '羊肉'])
     
     result = optimize_dumpling_nutrition(current_meal_recommend, current_dir=current_dir, EXCLUDED_FOODS=EXCLUDED_FOODS)
+    if adjustments is not None:
+        result['adjustments'] = adjustments
     
     # 转换DataFrame为字典
     # if isinstance(result["result_data"], pd.DataFrame):
@@ -79,4 +103,4 @@ def get_meal_recommend(username: str, adjustments: Dict[str, Any] = None) -> dic
 if __name__ == "__main__":
     logger.info("Start get_meal_recommend server through MCP")  # 记录服务启动日志
     mcp.run(transport="stdio")  # 启动服务并使用标准输入输出通信
-    # print(get_meal_recommend("zhangyulong", {"蛋白质": 1.2, "维生素C": 1.5}))
+    # print(get_meal_recommend("zhangyulong", {"能量": 1.2, "维生素C": 1.5}))
