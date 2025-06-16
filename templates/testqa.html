@@ -1,0 +1,132 @@
+<!-- templates/chat/index.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AI对话系统</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+        <style>
+        .chat-container {
+            width: 80%;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .message {
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .user-message {
+            background-color: #e3f2fd;
+            text-align: right;
+        }
+        .ai-message {
+            background-color: #f1f8e9;
+            text-align: left;
+        }
+        .chat-input {
+            display: flex;
+            margin-top: 20px;
+        }
+        .chat-input input {
+            flex-grow: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px 0 0 4px;
+        }
+        .chat-input button {
+            padding: 10px 15px;
+            background-color: #1976d2;
+            color: white;
+            border: none;
+            border-radius: 0 4px 4px 0;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <h1>AI对话系统</h1>
+        <div id="conversation" data-id="{{ current_conservation_id }}"></div>
+       
+        <div class="chat-input">
+            <input type="text" id="message-input" placeholder="输入您的问题...">
+            <button id="send-button">发送</button>
+        </div>
+        
+        <button id="new-conversation">新对话</button>
+        <button id="clear-conversation">清除对话</button>
+    </div>
+
+    <script>
+       
+        $(document).ready(function() {
+            const conversationId = $('#conversation').data('id');
+            console.log("Conversation ID:", conversationId); // 确保 conversationId 有值
+            // 加载对话
+            function loadConversation() {
+                $.get(`/conversation/`+conversationId+`/`, function(data) {
+                    $('#conversation').empty();
+                    
+                    data.contents.forEach(function(content) {
+                        const messageDiv = $('<div>').addClass('message');
+                        
+                        if (content.question) {
+                            const userMessageDiv = $('<div>').addClass('message user-message').text(content.question);
+                            messageDiv.append(userMessageDiv);
+                        }
+                        
+                        if (content.answer) {
+                            const aiMessageDiv = $('<div>').addClass('message ai-message').text(content.answer);
+                            messageDiv.append(aiMessageDiv);
+                        }
+                        
+                        $('#conversation').append(messageDiv);
+                    });
+                });
+            }
+            
+            // 初始加载对话
+            loadConversation();
+            
+            // 发送消息
+            $('#send-button').click(function() {
+                const message = $('#message-input').val().trim();
+              
+                if (message) {
+                    $.post('/add_message/', {
+                        conversation_id: conversationId,
+                        question: message
+                    }, function(response) {
+                        $('#message-input').val('');
+                        loadConversation();
+                    });
+                }
+            });
+            
+            // 按Enter发送消息
+            $('#message-input').keypress(function(e) {
+                if (e.which === 13) {
+                    $('#send-button').click();
+                }
+            });
+            
+            // 新对话
+            $('#new-conversation').click(function() {
+                $.post('/new_conversation/', function(response) {
+                    $('#conversation').data('id', response.conversation_id);
+                    loadConversation();
+                });
+            });
+            
+            // 清除对话
+            $('#clear-conversation').click(function() {
+                if (confirm('确定要清除当前对话吗？')) {
+                    $.post(`/clear_conversation/${conversationId}/`, function(response) {
+                        loadConversation();
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>
