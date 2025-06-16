@@ -7,7 +7,7 @@ from ..utils.util import mkdir, FLOUR, MEAT, VEGETABLE
 from decimal import Decimal
 
 # 调整营养值的循环次数
-ADJUST_ITER_NUM = 0
+ADJUST_ITER_NUM = 2
 
 def main_process(RNI_range, num_of_dumpling, meat_percent, 
                  output_file_path, input_file_path, dumpling_skin_percent, select_nutrition, EXCLUDED_FOODS=None):
@@ -130,8 +130,12 @@ def main_process(RNI_range, num_of_dumpling, meat_percent,
     nutrition_best_value_list = compute_nutrition_best_value(["综合"], nutrition_list, RNI_range, output_file_path,
                                                              weight, nutrition_filter, 30, 0.9)
     for i in range(ADJUST_ITER_NUM):
-        nutrition_best_value_list = adjust_nutrition_list(nutrition_best_value_list, RNI_range, nutrition_file_data2,
-                                                          output_file_path, weight, nutrition_filter, 30, 0.95, i + 1, EXCLUDED_FOODS)
+        if i < ADJUST_ITER_NUM - 1:
+            nutrition_best_value_list = adjust_nutrition_list(nutrition_best_value_list, RNI_range, nutrition_file_data2,
+                                                              output_file_path, weight, nutrition_filter, 30, 0.95, i + 1, EXCLUDED_FOODS)
+        else:
+            nutrition_best_value_list = adjust_nutrition_list(nutrition_best_value_list, RNI_range, nutrition_file_data2,
+                                                              output_file_path, weight, nutrition_filter, 100, 0.9, i + 1, EXCLUDED_FOODS)
     return nutrition_best_value_list
     # 从当前所需剩余营养中减去总体搭配的最优营养值
     # for nutrition in SELECT_NUTRITION:

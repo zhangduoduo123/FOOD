@@ -6,7 +6,8 @@ from mcp_client import MCPClient
 from django.http import JsonResponse
 from UserApp.models import UserInfo
 import json
-
+from UserApp.models import UserInfo
+from asgiref.sync import sync_to_async
 async def get_answer(request):
     if request.method == 'POST':
         try:

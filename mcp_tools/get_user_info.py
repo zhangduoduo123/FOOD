@@ -54,19 +54,6 @@ def get_user_info(username: str) -> dict:
        
         # 将结果转换为字典
         user_data = dict(zip(columns, user_info))
-         # 转换性别和活动水平
-        if 'gender' in user_data:
-            user_data['gender'] = '男' if user_data['gender'] == 'M' else '女'
-        if 'physical_activity' in user_data:
-            activity_map = {
-                0: '-',
-                1: '极轻',
-                2: '轻',
-                3: '中',
-                4: '重',
-                5: '极重'
-            }
-            user_data['physical_activity'] = activity_map.get(user_data['physical_activity'], user_data['physical_activity'])
         
         return user_data
         
