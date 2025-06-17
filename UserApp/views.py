@@ -157,25 +157,6 @@ def user_management(request):
                     # 如果没有user_basic_info，说明是新建，也需要更新
                     need_update_meal_recommend = True
 
-                if need_update_meal_recommend:
-                    from UserApp.models import MealRecommend
-                    # 删除该用户的meal_recommend表内容
-                    MealRecommend.objects.filter(uid=uid).delete()
-                    # 获取当前登录用户名
-                    username = None
-                    if user_info:
-                        username = user_info.username
-                    if username:
-                        import threading
-                        from mcp_tools.save_meal_recommend import save_meal_recommend
-
-                        def run_save_meal_recommend(username):
-                            try:
-                                save_meal_recommend(username)
-                            except Exception as e:
-                                print(f"save_meal_recommend error: {e}")
-
-                        threading.Thread(target=run_save_meal_recommend, args=(username,), daemon=True).start()
                 try:
                     user_basic_info = UserBasicInfo()
                     user_basic_info.uid = UserInfo.objects.get(uid=uid)
@@ -202,6 +183,25 @@ def user_management(request):
                     })
                 except UserBasicInfo.DoesNotExist:
                     form_error = "用户健康信息不存在"
+                if need_update_meal_recommend:
+                    from UserApp.models import MealRecommend
+                    # 删除该用户的meal_recommend表内容
+                    MealRecommend.objects.filter(uid=uid).delete()
+                    # 获取当前登录用户名
+                    username = None
+                    if user_info:
+                        username = user_info.username
+                    if username:
+                        import threading
+                        from mcp_tools.save_meal_recommend import save_meal_recommend
+
+                        def run_save_meal_recommend(username):
+                            try:
+                                save_meal_recommend(username)
+                            except Exception as e:
+                                print(f"save_meal_recommend error: {e}")
+
+                        threading.Thread(target=run_save_meal_recommend, args=(username,), daemon=True).start()
             else:
                 form_error = form.errors
         elif tab == '1':
