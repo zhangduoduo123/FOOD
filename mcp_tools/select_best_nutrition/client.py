@@ -23,7 +23,7 @@ SELECT_NUTRITION = [
     "维生素B2-毫克", "维生素C-毫克", "维生素E-毫克", "钙-毫克", "磷-毫克", "钾-毫克",
     "钠-毫克", "镁-毫克", "铁-毫克", "锌-毫克", "硒-微克", "铜-毫克", "锰-毫克"
 ]
-def optimize_dumpling_nutrition(RNI_range: Dict[str, Union[str, float, int]], current_dir: str, EXCLUDED_FOODS: List[str] = None) -> Dict[str, Union[pd.DataFrame, Dict]]:
+def optimize_dumpling_nutrition(RNI_range: Dict[str, Union[str, float, int]], current_dir: str, EXCLUDED_FOODS: List[str] = None, ADJUST_ITER_NUM: int = 0) -> Dict[str, Union[pd.DataFrame, Dict]]:
     """
     基于给定的RNI范围优化饺子配方并生成分析报告
 
@@ -68,7 +68,8 @@ def optimize_dumpling_nutrition(RNI_range: Dict[str, Union[str, float, int]], cu
         input_file_path=input_file_path,
         dumpling_skin_percent=dumpling_skin_percent,
         select_nutrition=SELECT_NUTRITION,
-        EXCLUDED_FOODS=EXCLUDED_FOODS
+        EXCLUDED_FOODS=EXCLUDED_FOODS,
+        ADJUST_ITER_NUM=ADJUST_ITER_NUM
     )
     
     # 转换为DataFrame
@@ -79,13 +80,10 @@ def optimize_dumpling_nutrition(RNI_range: Dict[str, Union[str, float, int]], cu
     result_file_path = f'{output_file_path}final_result.csv'
     final_result.to_csv(result_file_path)
     
-    # 构造返回结果
-    food_recommend = final_result.index[0]
-    nutrition_value = final_result.iloc[0].to_dict()
+    
     return {
         "status": "success",
-        "food_recommend": food_recommend,
-        "nutrition_value": nutrition_value,
+        "final_result": final_result
         # "parameters": {
         #     "num_of_dumpling": num_of_dumpling,
         #     "dumpling_skin_percent": dumpling_skin_percent,

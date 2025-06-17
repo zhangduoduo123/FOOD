@@ -441,4 +441,47 @@ INSERT INTO `rni_chinese` VALUES ('孕早期', 15, 200, '女', 53, '-', 2900, 95
 INSERT INTO `rni_chinese` VALUES ('孕中期', 15, 200, '女', 53, '-', 3200, 105, '71-89', '506-522', 1200, 700, 2500, 2200, 400, 35, 16.5, 65, 200, 2, 1.5, 50, 3.5, 60, 900, 130, 10, 14, 120, 1.5, 1.7, 1.9, 2.6, 6, 600, 15, 30);
 INSERT INTO `rni_chinese` VALUES ('哺乳期', 15, 200, '女', 53, '-', 3500, 105, '78-97', '554-571', 1200, 700, 2500, 2200, 400, 25, 21.5, 65, 200, 2, 1.5, 50, 3.5, 60, 1200, 130, 10, 14, 120, 1.8, 1.7, 1.9, 2.8, 7, 500, 18, 35);
 
+DROP TABLE IF EXISTS `meal_recommend`;
+CREATE TABLE `meal_recommend` (
+  `uid` int NOT NULL,
+  `meal` varchar(100) NOT NULL,
+  `adjust_info` varchar(200) DEFAULT NULL,
+  `food_recommend` varchar(200) NOT NULL,
+  `last_use_timestamp` timestamp NULL DEFAULT NULL,
+  `能量-千卡` bigint DEFAULT NULL,
+  `蛋白质-克` bigint DEFAULT NULL,
+  `脂肪-克` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci,
+  `碳水化合物-克` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci,
+  `钙-毫克` bigint DEFAULT NULL,
+  `磷-毫克` bigint DEFAULT NULL,
+  `钾-毫克` bigint DEFAULT NULL,
+  `钠-毫克` bigint DEFAULT NULL,
+  `镁-毫克` bigint DEFAULT NULL,
+  `铁-毫克` double DEFAULT NULL,
+  `锌-毫克` double DEFAULT NULL,
+  `硒-微克` bigint DEFAULT NULL,
+  `碘-微克` bigint DEFAULT NULL,
+  `铜-毫克` double DEFAULT NULL,
+  `氟-毫克` double DEFAULT NULL,
+  `铬-微克` bigint DEFAULT NULL,
+  `锰-毫克` double DEFAULT NULL,
+  `钼-微克` bigint DEFAULT NULL,
+  `维生素A-微克` bigint DEFAULT NULL,
+  `维生素C-毫克` bigint DEFAULT NULL,
+  `维生素D-微克` bigint DEFAULT NULL,
+  `维生素E-毫克` bigint DEFAULT NULL,
+  `维生素K-微克` bigint DEFAULT NULL,
+  `维生素B1-毫克` double DEFAULT NULL,
+  `维生素B2-毫克` double DEFAULT NULL,
+  `维生素B6-毫克` double DEFAULT NULL,
+  `维生素B12-微克` double DEFAULT NULL,
+  `泛酸-毫克` double DEFAULT NULL,
+  `叶酸-微克` bigint DEFAULT NULL,
+  `烟酸-毫克` bigint DEFAULT NULL,
+  `生物素-微克` bigint DEFAULT NULL,
+  `id` int NOT NULL AUTO_INCREMENT,
+  PRIMARY KEY (`id`),
+  KEY `meal_recommend_ibfk_1` (`uid`),
+  CONSTRAINT `meal_recommend_ibfk_1` FOREIGN KEY (`uid`) REFERENCES `user_info` (`uid`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC;
 SET FOREIGN_KEY_CHECKS = 1;

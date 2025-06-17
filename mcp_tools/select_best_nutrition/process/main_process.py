@@ -6,11 +6,9 @@ from .topsis_process import compute_nutrition_best_value
 from ..utils.util import mkdir, FLOUR, MEAT, VEGETABLE
 from decimal import Decimal
 
-# 调整营养值的循环次数
-ADJUST_ITER_NUM = 2
 
 def main_process(RNI_range, num_of_dumpling, meat_percent, 
-                 output_file_path, input_file_path, dumpling_skin_percent, select_nutrition, EXCLUDED_FOODS=None):
+                 output_file_path, input_file_path, dumpling_skin_percent, select_nutrition, EXCLUDED_FOODS=None, ADJUST_ITER_NUM=0):
     """
     饺子营养优化的主处理函数
     
