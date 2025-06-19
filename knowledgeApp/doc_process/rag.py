@@ -13,13 +13,18 @@ from langchain.prompts import PromptTemplate
 from langchain.schema import Document
 # import logging
 from mcp.server.fastmcp import FastMCP
-from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
 import pandas as pd
 from bs4 import BeautifulSoup
 import traceback
 from docx import Document as DocxDocument
 import time
+from functools import lru_cache
+
+# 导入DeepSeek API密钥
+# import sys
+# sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
+# from utils.env_info import DEEPSEEK_API_KEY
 
 # 创建 FastMCP 实例
 mcp = FastMCP("RAG")
@@ -38,7 +43,7 @@ class Config:
             "chunk_size": 1000,
             "chunk_overlap": 200,
             "vector_db_dir": "chroma_db",
-            "search_k": 3
+            "search_k": 5
         }
         self.config = self._load_config()
 
@@ -77,6 +82,8 @@ class RAGSystem:
         try:
             # 尝试创建embeddings实例来检查服务
             OllamaEmbeddings(model=self.config.get("embedding_model"))
+            print("[Ollama检查] ✓ 服务连接正常")
+                
         except Exception as e:
             # logger.error(f"Ollama服务未运行或无法连接: {str(e)}")
             raise RuntimeError(f"Ollama服务未运行或无法连接: {str(e)}")
@@ -244,9 +251,17 @@ class RAGSystem:
             print("[setup_qa_chain] 构建QA链")
             qa_prompt = PromptTemplate(
                 template="你是一个专业的知识助手，根据以下上下文回答用户的问题。如果不知道答案，请诚实说明。\n"
-                         "上下文：\n{context}\n"
-                         "问题：\n{question}\n"
-                         "回答：",
+                         "重要提示：以下上下文中的每个文档都包含类别信息（class）、质量得分（score）和来源名称（name）。"
+                         "请充分利用这些信息来提供更准确的答案：\n"
+                         "1. 优先参考与问题最相关的类别文档\n"
+                         "2. 考虑文档的质量得分，得分越高的文档越可靠\n"
+                         "3. 注意文档来源的权威性\n"
+                         "4. 如果不同类别的文档有冲突，请综合判断并说明\n\n"
+                         "5. 文档名称也是重要的分类依据\n\n"
+                         "上下文信息：\n{context}\n\n"
+                         "用户问题：{question}\n\n"
+                         "请根据上述上下文，结合文档的类别、质量和来源信息，提供准确、全面的回答。"
+                         "如果不知道答案，请诚实说明。回答要结构清晰，重点突出。\n\n",
                 input_variables=["context", "question"]
             )
 
@@ -266,24 +281,59 @@ class RAGSystem:
             print("[setup_qa_chain] 异常：", e)
             return False
 
-    def rerank_documents(self, query: str, documents: list, top_k: int = 3) -> list:
-        """对召回的文档进行相关性重排序，先按相似度排序，再按score降序排序，返回top_k文档"""
-        if not documents:
-            return []
-        if self.embeddings_model is None:
-            self.embeddings_model = OllamaEmbeddings(model=self.config.get("embedding_model"))
-        # 获取query和文档的embedding
-        query_emb = self.embeddings_model.embed_query(query)
-        doc_embs = [self.embeddings_model.embed_query(doc.page_content) for doc in documents]
-        # 计算相似度
-        sims = cosine_similarity([query_emb], doc_embs)[0]
-        # 组合相似度和score
-        doc_sim_score = [ (i, sims[i], documents[i].metadata.get('score', 0)) for i in range(len(documents)) ]
-        # 先按相似度降序，再按score降序
-        doc_sim_score.sort(key=lambda x: (x[1], x[2]), reverse=True)
-        sorted_indices = [x[0] for x in doc_sim_score[:top_k]]
-        reranked_docs = [documents[i] for i in sorted_indices]
-        return reranked_docs
+    @lru_cache(maxsize=1000)
+    def get_embedding(self, text: str):
+        return self.embeddings_model.embed_query(text)
+
+    def monitor_llm_performance(self, query: str, docs: list) -> Dict:
+        """监控LLM推理性能"""
+        try:
+            t0 = time.time()
+            
+            # 计算输入长度
+            total_input_length = len(query) + sum(len(doc.page_content) for doc in docs)
+            
+            # 执行推理
+            result = self.qa_chain.combine_documents_chain.run({
+                "input_documents": docs, 
+                "question": query
+            })
+            
+            t1 = time.time()
+            inference_time = t1 - t0
+            
+            # 性能分析
+            performance_info = {
+                "inference_time": inference_time,
+                "input_length": total_input_length,
+                "docs_count": len(docs),
+                "chars_per_second": total_input_length / inference_time if inference_time > 0 else 0,
+                "model": self.config.get("llm_model"),
+                "performance_level": self._assess_performance_level(inference_time, total_input_length)
+            }
+            
+            print(f"[性能监控] 推理时间: {inference_time:.2f}s")
+            print(f"[性能监控] 输入长度: {total_input_length} 字符")
+            print(f"[性能监控] 处理速度: {performance_info['chars_per_second']:.0f} 字符/秒")
+            print(f"[性能监控] 性能等级: {performance_info['performance_level']}")
+            
+            return performance_info
+            
+        except Exception as e:
+            return {"error": str(e)}
+
+    def _assess_performance_level(self, inference_time: float, input_length: int) -> str:
+        """评估性能等级"""
+        chars_per_second = input_length / inference_time if inference_time > 0 else 0
+        
+        if chars_per_second > 1000:
+            return "优秀"
+        elif chars_per_second > 500:
+            return "良好"
+        elif chars_per_second > 200:
+            return "一般"
+        else:
+            return "较慢"
 
 @mcp.tool()
 def setup_qa_chain(pdf_path: Union[str, List[str]] = "pdfs") -> Dict:
@@ -304,9 +354,8 @@ def setup_qa_chain(pdf_path: Union[str, List[str]] = "pdfs") -> Dict:
 
 @mcp.tool()
 def query_documents(query: str, pdf_path: Optional[Union[str, List[str]]] = None) -> Dict:
-    """查询文档并返回答案（带rerank）"""
+    """查询文档并返回答案"""
     global _rag_instance
-    # logger.info(f"Processing query: {query}")
     try:
         t0 = time.time()
         if _rag_instance is None:
@@ -319,25 +368,25 @@ def query_documents(query: str, pdf_path: Optional[Union[str, List[str]]] = None
         t2 = time.time()
         if _rag_instance.qa_chain is None:
             return {"status": "error", "message": "QA chain not initialized"}
-        # 先召回文档
+        
+        # 召回文档
         retriever = _rag_instance.qa_chain.retriever
         docs = retriever.get_relevant_documents(query)
         t3 = time.time()
-        # rerank
-        reranked_docs = _rag_instance.rerank_documents(query, docs, top_k=_rag_instance.config.get("search_k", 3))
+        
+        # 用召回的文档做QA
+        result = _rag_instance.qa_chain.combine_documents_chain.run({"input_documents": docs, "question": query})
         t4 = time.time()
-        # 用rerank后的文档做QA
-        result = _rag_instance.qa_chain.combine_documents_chain.run({"input_documents": reranked_docs, "question": query})
-        t5 = time.time()
-        print(f"[耗时分析] 初始化RAG: {t1-t0:.2f}s, QA链setup: {t2-t1:.2f}s, 文档召回: {t3-t2:.2f}s, rerank: {t4-t3:.2f}s, LLM推理: {t5-t4:.2f}s, 总计: {t5-t0:.2f}s")
+        
+        print(f"[耗时分析] 初始化RAG: {t1-t0:.2f}s, QA链setup: {t2-t1:.2f}s, 文档召回: {t3-t2:.2f}s, LLM推理: {t4-t3:.2f}s, 总计: {t4-t0:.2f}s")
+        
         return {
             "status": "success",
             "answer": result,
-            "sources": [doc.page_content for doc in reranked_docs],
-            "topk_contents": [doc.page_content for doc in reranked_docs]  # 新增返回topK内容
+            "sources": [doc.page_content for doc in docs],
+            "topk_contents": [doc.page_content for doc in docs]
         }
     except Exception as e:
-        # logger.error(f"Error processing query: {e}")
         return {"status": "error", "message": str(e)}
 
 if __name__ == "__main__":
