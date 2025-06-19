@@ -74,7 +74,7 @@ class RAGSystem:
     def __init__(self, config_path: str = "config.json"):
         self.config = Config(config_path)
         self.qa_chain = None
-        self._check_ollama_service()
+        # self._check_ollama_service()
         self.embeddings_model = None
 
     def _check_ollama_service(self):
@@ -191,16 +191,8 @@ class RAGSystem:
     def setup_qa_chain(self, pdf_path: Union[str, List[str]] = "pdfs"):
         """设置QA链，支持处理PDF、表格文件、文件列表或目录"""
         try:
-            t0 = time.time()
-            print("[setup_qa_chain] 开始检查PDF路径")
             self._check_pdf_path(pdf_path)
-            t1 = time.time()
-            print(f"[setup_qa_chain] 检查PDF路径完成，耗时: {t1-t0:.2f}s")
-
-            print("[setup_qa_chain] 确保向量数据库目录存在")
             self._ensure_vector_db_dir()
-            t2 = time.time()
-            print(f"[setup_qa_chain] 向量数据库目录检查完成，耗时: {t2-t1:.2f}s")
 
             db_dir = self.config.get("vector_db_dir")
             embeddings = OllamaEmbeddings(model=self.config.get("embedding_model"))
@@ -208,47 +200,34 @@ class RAGSystem:
 
             # 判断ChromaDB是否已存在
             if os.path.exists(db_dir) and os.listdir(db_dir):
-                print("[setup_qa_chain] ChromaDB目录下有文件，直接加载")
                 vectordb = Chroma(persist_directory=db_dir, embedding_function=embeddings)
-                t3 = time.time()
-                print(f"[setup_qa_chain] 加载ChromaDB完成，耗时: {t3-t2:.2f}s")
             else:
-                print("[setup_qa_chain] 加载文档和表格")
                 documents = self._load_documents(pdf_path)
-                t3 = time.time()
-                print(f"[setup_qa_chain] 文档加载完成，共{len(documents)}个文档，耗时: {t3-t2:.2f}s")
                 # 统一转换为Document对象
                 documents = [
                     doc if isinstance(doc, Document) else Document(page_content=doc.get("page_content", ""), metadata=doc.get("metadata", {}))
                     for doc in documents
                 ]
-                print("[setup_qa_chain] 文档对象转换完成")
                 # 文本分割
                 text_splitter = RecursiveCharacterTextSplitter(
                     chunk_size=self.config.get("chunk_size"),
                     chunk_overlap=self.config.get("chunk_overlap")
                 )
                 texts = text_splitter.split_documents(documents)
-                t4 = time.time()
-                print(f"[setup_qa_chain] 文本分割完成，共{len(texts)}个分块，耗时: {t4-t3:.2f}s")
                 # 初始化ChromaDB
                 vectordb = Chroma.from_documents(
                     texts,
                     embeddings,
                     persist_directory=db_dir
                 )
-                t5 = time.time()
-                print(f"[setup_qa_chain] ChromaDB已新建并持久化，耗时: {t5-t4:.2f}s")
 
-            print("[setup_qa_chain] 初始化生成模型")
+            # 初始化生成模型
             llm = ChatOllama(
                 model=self.config.get("llm_model"),
                 temperature=self.config.get("llm_temperature")
             )
-            t6 = time.time()
-            print(f"[setup_qa_chain] 生成模型初始化完成，耗时: {t6-(t5 if 't5' in locals() else t3):.2f}s")
 
-            print("[setup_qa_chain] 构建QA链")
+            # 定义自定义的提示模板
             qa_prompt = PromptTemplate(
                 template="你是一个专业的知识助手，根据以下上下文回答用户的问题。如果不知道答案，请诚实说明。\n"
                          "重要提示：以下上下文中的每个文档都包含类别信息（class）、质量得分（score）和来源名称（name）。"
@@ -274,8 +253,6 @@ class RAGSystem:
                 return_source_documents=True,
                 chain_type_kwargs={"prompt": qa_prompt}
             )
-            t7 = time.time()
-            print(f"[setup_qa_chain] QA链构建完成，耗时: {t7-t6:.2f}s，总耗时: {t7-t0:.2f}s")
             return True
         except Exception as e:
             print("[setup_qa_chain] 异常：", e)
@@ -357,32 +334,33 @@ def query_documents(query: str, pdf_path: Optional[Union[str, List[str]]] = None
     """查询文档并返回答案"""
     global _rag_instance
     try:
-        t0 = time.time()
+        start_time = time.time()
+        
         if _rag_instance is None:
             _rag_instance = RAGSystem()
-        t1 = time.time()
+        
         if pdf_path is not None or _rag_instance.qa_chain is None:
             success = _rag_instance.setup_qa_chain(pdf_path or "pdfs")
             if not success:
                 return {"status": "error", "message": "Failed to setup QA chain"}
-        t2 = time.time()
+        
         if _rag_instance.qa_chain is None:
             return {"status": "error", "message": "QA chain not initialized"}
         
         # 召回文档
         retriever = _rag_instance.qa_chain.retriever
         docs = retriever.get_relevant_documents(query)
-        t3 = time.time()
         
         # 用召回的文档做QA
         result = _rag_instance.qa_chain.combine_documents_chain.run({"input_documents": docs, "question": query})
-        t4 = time.time()
         
-        print(f"[耗时分析] 初始化RAG: {t1-t0:.2f}s, QA链setup: {t2-t1:.2f}s, 文档召回: {t3-t2:.2f}s, LLM推理: {t4-t3:.2f}s, 总计: {t4-t0:.2f}s")
+        end_time = time.time()
+        total_time = end_time - start_time
         
         return {
             "status": "success",
             "answer": result,
+            "processing_time": total_time,
             "sources": [doc.page_content for doc in docs],
             "topk_contents": [doc.page_content for doc in docs]
         }
