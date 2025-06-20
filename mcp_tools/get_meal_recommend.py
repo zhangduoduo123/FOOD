@@ -59,6 +59,14 @@ def get_meal_recommend(username: str, adjustments: Dict[str, Any] = None) -> dic
         # }
     """
     user_info = get_user_info(username)
+    # 检查用户基本信息是否完整
+    weight = user_info.get('weight', 0)
+    height = user_info.get('height', 0)
+    age = user_info.get('age', 0)
+    
+    if weight == 0 or height == 0 or age == 0:
+        return {"result": "error", "err_message": "请在用户管理中输入个人健康信息"}
+    print(user_info)
     uid = user_info.get('uid')
 
     # 获取当前时间
@@ -166,7 +174,7 @@ def get_meal_recommend(username: str, adjustments: Dict[str, Any] = None) -> dic
             except Exception as close_e:
                 pass
     adjust_info = str(adjustments) if adjustments is not None else None
-    adjustments_original = adjustments.copy()
+    adjustments_original = adjustments.copy() if adjustments is not None else {}
     # 计算BMI值
     weight = float(user_info.get('weight', 0))
     print(weight)
@@ -276,7 +284,7 @@ def get_meal_recommend(username: str, adjustments: Dict[str, Any] = None) -> dic
         if isinstance(v, float):
             nutrition_value[k] = round(v, 2)
     result['nutrition_value'] = nutrition_value
-    if adjustments is not None:
+    if adjustments_original is not None:
         result['adjustments'] = adjustments_original
     
     return result
@@ -287,4 +295,4 @@ if __name__ == "__main__":
     logger.info("Start get_meal_recommend server through MCP")  # 记录服务启动日志
     mcp.run(transport="stdio")  # 启动服务并使用标准输入输出通信
     # print(get_meal_recommend("zhangyulong", {"能量": 1.2, "维生素C": 1.5}))
-    # print(get_meal_recommend("zhangyulong"))
+    # print(get_meal_recommend("zyl"))
