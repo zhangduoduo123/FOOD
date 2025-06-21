@@ -88,8 +88,36 @@ def get_meal_recommend(username: str, adjustments: Dict[str, Any] = None) -> dic
         current_meal = "午饭"
     elif dinner_start <= current_time <= dinner_end:
         current_meal = "晚饭"
+    adjust_info = str(adjustments) if adjustments is not None else None
+    adjustments_original = adjustments.copy() if adjustments is not None else {}
+    # 计算BMI值
+    weight = float(user_info.get('weight', 0))
+    print(weight)
+    height = float(user_info.get('height', 0))
+    print(height)
+    
+    if weight > 0 and height > 0:
+        # 将身高从厘米转换为米
+        height_m = height / 100
+        bmi = weight / (height_m * height_m)
+        
+        # 如果BMI超过24，调整能量、脂肪和碳水化合物的摄入
+        if bmi > 24:
+            if adjustments is None:
+                adjustments = {}
+            adjust_value = 0.95
+            # 对能量、脂肪、碳水化合物进行调整
+            for nutrient in ['能量', '脂肪', '碳水化合物']:
+                if nutrient in adjustments:
+                    adjustments[nutrient] = round(adjustments[nutrient] * adjust_value, 2)
+                else:
+                    adjustments[nutrient] = adjust_value
+    RNI = adjust_RNI(user_info, adjustments)
+    
+    # 从RNI列表中筛选出当前餐次的推荐
+    current_meal_recommend = next((meal for meal in RNI if meal["meal"] == current_meal), None)
     # INSERT_YOUR_CODE
-    if adjustments is None:
+    if adjustments_original is None or len(adjustments_original) == 0:
         conn = get_mysql_connection()
         try:
             with conn.cursor(pymysql.cursors.DictCursor) as cursor:
@@ -173,35 +201,114 @@ def get_meal_recommend(username: str, adjustments: Dict[str, Any] = None) -> dic
                 conn.close()
             except Exception as close_e:
                 pass
-    adjust_info = str(adjustments) if adjustments is not None else None
-    adjustments_original = adjustments.copy() if adjustments is not None else {}
-    # 计算BMI值
-    weight = float(user_info.get('weight', 0))
-    print(weight)
-    height = float(user_info.get('height', 0))
-    print(height)
-    
-    if weight > 0 and height > 0:
-        # 将身高从厘米转换为米
-        height_m = height / 100
-        bmi = weight / (height_m * height_m)
+    else :
+        conn = get_mysql_connection()
+        # 根据uid从food_recommend表中查找所有记录
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM meal_recommend WHERE uid = %s AND meal = %s", (uid, current_meal))
+        records = cursor.fetchall()
         
-        # 如果BMI超过24，调整能量、脂肪和碳水化合物的摄入
-        if bmi > 24:
-            if adjustments is None:
-                adjustments = {}
-            adjust_value = 0.95
-            # 对能量、脂肪、碳水化合物进行调整
-            for nutrient in ['能量', '脂肪', '碳水化合物']:
-                if nutrient in adjustments:
-                    adjustments[nutrient] = round(adjustments[nutrient] * adjust_value, 2)
-                else:
-                    adjustments[nutrient] = adjust_value
-    RNI = adjust_RNI(user_info, adjustments)
-    
-    # 从RNI列表中筛选出当前餐次的推荐
-    current_meal_recommend = next((meal for meal in RNI if meal["meal"] == current_meal), None)
-    # return current_meal_recommend
+        if records:
+        
+            # 获取列名
+            column_names = [desc[0] for desc in cursor.description]
+            
+            # 将记录转换为字典列表
+            food_records = []
+            for record in records:
+                record_dict = dict(zip(column_names, record))
+                food_records.append(record_dict)
+            
+            # 根据adjustments_origin中的调整项找到最接近的记录
+            best_record = None
+            min_total_diff = float('inf')
+            
+            for record in food_records:
+                total_diff = 0
+                match_count = 0
+                
+                # 遍历adjustments_original中的每个调整项
+                for nutrient, target_value in adjustments_original.items():
+                    # 在current_meal_recommend中找到对应的营养元素值
+                    meal_nutrient_value = None
+                    nutrient_full = None
+                    for key, value in current_meal_recommend.items():
+                        if '-' in key:
+                            key_prefix = key.split('-')[0]
+                            if key_prefix == nutrient:
+                                meal_nutrient_value = value
+                                nutrient_full = key
+                                break
+                    
+                    if meal_nutrient_value is not None:
+                        # 在record中找到对应的营养元素值
+                        record_value = record.get(nutrient_full, 0)
+                        try:
+                            record_value = float(record_value) if record_value else 0
+                        except (ValueError, TypeError):
+                            record_value = 0
+                        
+                        # 计算差距倍数
+                        if meal_nutrient_value != 0:
+                            ratio = abs(record_value / meal_nutrient_value - 1)
+                        else:
+                            ratio = float('inf') if record_value != 0 else 0
+                        total_diff += ratio
+                        match_count += 1
+                
+                # 如果找到了匹配的调整项，计算平均差值
+                if match_count > 0:
+                    avg_diff = total_diff / match_count
+                    if avg_diff < min_total_diff:
+                        min_total_diff = avg_diff
+                        best_record = record
+            
+            if best_record is not None:
+                
+                # 解析food_recommend字段
+                food_recommend = best_record.get('food_recommend', '')
+                food_recommend_dict = {}
+                
+                if isinstance(food_recommend, str):
+                    if ';' in food_recommend:
+                        groups = food_recommend.split(';')
+                        for group in groups:
+                            if not group.strip():
+                                continue
+                            items = group.split('_')
+                            i = 0
+                            while i < len(items) - 1:
+                                name = items[i].strip()
+                                weight_str = items[i+1].strip()
+                                try:
+                                    weight = float(weight_str)
+                                except ValueError:
+                                    weight = weight_str
+                                food_recommend_dict[name] = weight
+                                i += 2
+                    else:
+                        food_recommend_dict = food_recommend
+                
+                # 设置nutrition_value为仅包含record中有值的营养元素字段的字典
+                nutrition_fields = [
+                    '能量-千卡', '蛋白质-克', '脂肪-克', '碳水化合物-克', '钙-毫克', '磷-毫克', '钾-毫克', '钠-毫克', '镁-毫克',
+                    '铁-毫克', '锌-毫克', '硒-微克', '碘-微克', '铜-毫克', '氟-毫克', '铬-微克', '锰-毫克', '钼-微克',
+                    '维生素A-微克', '维生素C-毫克', '维生素D-微克', '维生素E-毫克', '维生素K-微克', '维生素B1-毫克',
+                    '维生素B2-毫克', '维生素B6-毫克', '维生素B12-微克', '泛酸-毫克', '叶酸-微克', '烟酸-毫克', '生物素-微克'
+                ]
+                nutrition_value = {}
+                for field in nutrition_fields:
+                    value = best_record.get(field)
+                    if value is not None and value != '':
+                        try:
+                            value = float(value)
+                            value = round(value, 2)
+                        except Exception:
+                            pass
+                        nutrition_value[field] = value
+                
+                return {"status": "success", "food_recommend": food_recommend_dict, "nutrition_value": nutrition_value, "adjustments": adjustments_original}
+        
     
     current_dir = str(here()).replace('\\', '/')+'/mcp_tools/select_best_nutrition/'
     EXCLUDED_FOODS = []
@@ -286,6 +393,7 @@ def get_meal_recommend(username: str, adjustments: Dict[str, Any] = None) -> dic
     result['nutrition_value'] = nutrition_value
     if adjustments_original is not None:
         result['adjustments'] = adjustments_original
+    # result['recomend_nutrition_value'] = current_meal_recommend
     
     return result
     
@@ -294,5 +402,5 @@ def get_meal_recommend(username: str, adjustments: Dict[str, Any] = None) -> dic
 if __name__ == "__main__":
     logger.info("Start get_meal_recommend server through MCP")  # 记录服务启动日志
     mcp.run(transport="stdio")  # 启动服务并使用标准输入输出通信
-    # print(get_meal_recommend("zhangyulong", {"能量": 1.2, "维生素C": 1.5}))
+    # print(get_meal_recommend("zhangyulong", {"铁": 1.2, "维生素C": 1.5}))
     # print(get_meal_recommend("zyl"))
