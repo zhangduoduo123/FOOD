@@ -25,7 +25,7 @@ async def get_answer(request):
                 username = user_info.username if user_info else None
                 
                 if username:
-                    question = f"当前用户是{username}，{question}，请优化输出格式为html格式，仅保留html内容，不要输出其他内容"
+                    question = f"当前用户是{username}，用户问题是：{question}。请优化输出格式为html格式，仅保留html内容，不要输出其他内容。"
                 
                 try:
                     async with MCPClient() as client:

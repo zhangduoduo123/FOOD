@@ -53,10 +53,36 @@
                         const assistantMessageDiv = document.createElement('div');
                         assistantMessageDiv.classList.add('message', 'assistant-message');
                         if (answer && answer.includes('<') && answer.includes('>')) {
-                            assistantMessageDiv.innerHTML = answer;
+                            
+                            // 创建一个临时的div来解析HTML
+                            const tempDiv = document.createElement('div');
+                            tempDiv.innerHTML = answer;
+                            
+                            // 移除所有style标签和style属性
+                            const styleTags = tempDiv.querySelectorAll('style');
+                            styleTags.forEach(tag => tag.remove());
+                            
+                            const elementsWithStyle = tempDiv.querySelectorAll('[style]');
+                            elementsWithStyle.forEach(element => {
+                                element.removeAttribute('style');
+                            });
+                            
+                            // 移除所有class属性（可选，如果需要的话）
+                            const elementsWithClass = tempDiv.querySelectorAll('[class]');
+                            elementsWithClass.forEach(element => {
+                                element.removeAttribute('class');
+                            });
+                            
+                            // 使用清理后的HTML内容
+                            assistantMessageDiv.innerHTML = tempDiv.innerHTML;
                         } else {
                             assistantMessageDiv.textContent = answer;
                         }
+                        // if (answer && answer.includes('<') && answer.includes('>')) {
+                        //     assistantMessageDiv.innerHTML = answer;
+                        // } else {
+                        //     assistantMessageDiv.textContent = answer;
+                        // }
                         chatContainer.appendChild(assistantMessageDiv);
                     } else {
                         console.error('请求失败:', response.status);
