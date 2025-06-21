@@ -123,7 +123,12 @@
                         // 添加实际回答
                         const assistantMessageDiv = document.createElement('div');
                         assistantMessageDiv.classList.add('message', 'assistant-message');
-                        assistantMessageDiv.textContent = answer;
+                        // 检查answer是否为HTML格式，如果是则直接设置innerHTML
+                        if (answer && answer.includes('<') && answer.includes('>')) {
+                            assistantMessageDiv.innerHTML = answer;
+                        } else {
+                            assistantMessageDiv.textContent = answer;
+                        }
                         chatContainer.appendChild(assistantMessageDiv);
                         setTimeout(scrollToBottom, 100);
                     } else {

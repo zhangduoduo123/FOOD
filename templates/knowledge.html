@@ -52,7 +52,11 @@
                         const answer = data.answer;
                         const assistantMessageDiv = document.createElement('div');
                         assistantMessageDiv.classList.add('message', 'assistant-message');
-                        assistantMessageDiv.textContent = answer;
+                        if (answer && answer.includes('<') && answer.includes('>')) {
+                            assistantMessageDiv.innerHTML = answer;
+                        } else {
+                            assistantMessageDiv.textContent = answer;
+                        }
                         chatContainer.appendChild(assistantMessageDiv);
                     } else {
                         console.error('请求失败:', response.status);

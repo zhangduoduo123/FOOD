@@ -25,11 +25,20 @@ async def get_answer(request):
                 username = user_info.username if user_info else None
                 
                 if username:
-                    question = f"当前用户是{username}，{question}"
+                    question = f"当前用户是{username}，{question}，请优化输出格式为html格式，仅保留html内容，不要输出其他内容"
                 
                 try:
                     async with MCPClient() as client:
                         answer, steps = await client.ask(question)
+                    # 检查answer是否包含HTML内容，如果包含则只保留HTML部分
+                    if answer and '<' in answer and '>' in answer:
+                        # 查找第一个HTML标签的开始位置
+                        start_index = answer.find('<')
+                        # 查找最后一个HTML标签的结束位置
+                        end_index = answer.rfind('>') + 1
+                        # 截取HTML部分
+                        answer = answer[start_index:end_index]
+                        
                 except Exception as e:
                     # 如果MCP调用失败，返回错误信息
                     return JsonResponse({
@@ -113,7 +122,7 @@ def add_message(request):
         question = request.POST.get('question')
         
         # 简单的AI响应模拟（实际应用中应替换为真实AI服务）
-        answer = f"AI助手: 收到了您的问题 '{question}'，这是一个模拟回答。"
+        answer = f"AI助手: 收到了您的问题 '{question}'，这是一个模拟回答。请优化输出格式为html格式，仅保留html内容，不要输出其他内容"
         
         try:
             conversation = Conservation.objects.get(conservation_id=conversation_id)
@@ -131,7 +140,14 @@ def add_message(request):
             question=question,
             answer=answer
         )
-        
+        # 检查answer是否包含HTML内容，如果包含则只保留HTML部分
+        if content.answer and '<' in content.answer and '>' in content.answer:
+            # 查找第一个HTML标签的开始位置
+            start_index = content.answer.find('<')
+            # 查找最后一个HTML标签的结束位置
+            end_index = content.answer.rfind('>') + 1
+            # 截取HTML部分
+            content.answer = content.answer[start_index:end_index]
         return JsonResponse({
             'content_id': content.content_id,
             'question': content.question,
